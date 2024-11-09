@@ -1,6 +1,12 @@
 import OpenAI, { type ClientOptions } from "openai";
-import type { Message, ModelAdapter, OutputMessage } from "../types";
-import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
+import type { Message, ModelAdapter, OutputMessage, Tool } from "../types";
+import type {
+  ChatCompletionMessageParam,
+  ChatCompletionTool,
+} from "openai/resources/index.mjs";
+import zodToJsonSchema from "zod-to-json-schema";
+import type { JSONSchema } from "openai/lib/jsonschema.mjs";
+import { z } from "zod";
 
 export class OpenAIAdapter implements ModelAdapter {
   private openai: OpenAI;
@@ -12,10 +18,12 @@ export class OpenAIAdapter implements ModelAdapter {
     model,
     message,
     agent_name,
+    tools,
   }: {
     model: string;
     message: Message;
     agent_name?: string;
+    tools?: Tool[];
   }) {
     const omessage: ChatCompletionMessageParam =
       convertMessageToChatCompletionMessageParam(message);
@@ -35,18 +43,23 @@ export class OpenAIAdapter implements ModelAdapter {
     messages,
     model,
     agent_name,
+    tools,
   }: {
     model: string;
     messages: Message[];
     agent_name?: string;
+    tools?: Tool[];
   }): Promise<OutputMessage> {
     const omessages: ChatCompletionMessageParam[] = messages.map(
       convertMessageToChatCompletionMessageParam,
     );
 
+    const otools = tools?.map(convertToolToChatCompletionTool);
+
     const res = await this.openai.chat.completions.create({
       model: model,
       messages: omessages,
+      tools: otools,
     });
 
     return convertChatCompletionMessageParamToMessage(
@@ -54,6 +67,23 @@ export class OpenAIAdapter implements ModelAdapter {
       agent_name,
     ) as OutputMessage;
   }
+}
+
+export function convertToolToChatCompletionTool(
+  tool: Tool,
+): ChatCompletionTool {
+  const params = zodToJsonSchema(tool.params ?? z.object({})) as JSONSchema;
+  return {
+    function: {
+      name: tool.name,
+      description: params.description,
+      parameters: {
+        type: "object",
+        properties: params.properties,
+      },
+    },
+    type: "function",
+  };
 }
 
 export function convertMessageToChatCompletionMessageParam(

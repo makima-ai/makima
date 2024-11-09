@@ -1,4 +1,4 @@
-# makimav2
+# makima
 
 To install dependencies:
 

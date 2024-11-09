@@ -1,5 +1,5 @@
 import { OpenAIAdapter } from "./adapters/openai";
-import type { Message, ModelAdapter, OutputMessage } from "./types";
+import type { Message, ModelAdapter, OutputMessage, Tool } from "./types";
 
 function createAdapter(provider: string): ModelAdapter {
   switch (provider.toLowerCase()) {
@@ -19,11 +19,22 @@ function createAdapter(provider: string): ModelAdapter {
   }
 }
 
-export async function infer(
-  model: string,
-  messages: Message[],
-): Promise<OutputMessage> {
-  const [provider, modelName] = model.split("/");
+export async function infer({
+  model,
+  messages,
+  tools,
+}: {
+  model: string;
+  messages: Message[];
+  tools?: Tool[];
+}): Promise<OutputMessage> {
+  const modelParts = model.split("/");
+
+  if (modelParts.length !== 2) {
+    throw new Error("Invalid model name");
+  }
+
+  const [provider, modelName] = modelParts;
 
   const adapter = createAdapter(provider);
 
@@ -31,6 +42,7 @@ export async function infer(
     const result = await adapter.infer({
       model: modelName,
       messages,
+      tools,
     });
     return result;
   } catch (error) {
