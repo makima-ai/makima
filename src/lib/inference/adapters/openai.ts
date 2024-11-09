@@ -1,6 +1,14 @@
 import OpenAI, { type ClientOptions } from "openai";
-import type { Message, ModelAdapter, OutputMessage, Tool } from "../types";
 import type {
+  Message,
+  MessageContent,
+  ModelAdapter,
+  OutputMessage,
+  Tool,
+  ToolResponse,
+} from "../types";
+import type {
+  ChatCompletionContentPart,
   ChatCompletionMessageParam,
   ChatCompletionTool,
 } from "openai/resources/index.mjs";
@@ -31,6 +39,7 @@ export class OpenAIAdapter implements ModelAdapter {
     const res = await this.openai.chat.completions.create({
       model: model,
       messages: [omessage],
+      tools: tools?.map(convertToolToChatCompletionTool),
     });
 
     return convertChatCompletionMessageParamToMessage(
@@ -44,11 +53,13 @@ export class OpenAIAdapter implements ModelAdapter {
     model,
     agent_name,
     tools,
+    recursive = true,
   }: {
     model: string;
     messages: Message[];
     agent_name?: string;
     tools?: Tool[];
+    recursive?: boolean;
   }): Promise<OutputMessage> {
     const omessages: ChatCompletionMessageParam[] = messages.map(
       convertMessageToChatCompletionMessageParam,
@@ -62,10 +73,56 @@ export class OpenAIAdapter implements ModelAdapter {
       tools: otools,
     });
 
-    return convertChatCompletionMessageParamToMessage(
+    const inter_message = convertChatCompletionMessageParamToMessage(
       res.choices[0].message,
       agent_name,
     ) as OutputMessage;
+
+    if (inter_message.role === "tool_calls") {
+      const tool_responses_promises = inter_message.calls.map(async (call) => {
+        const tool = tools?.find((t) => t.name === call.tool_name);
+        if (!tool) {
+          return {
+            id: call.id,
+            role: "tool_response",
+            content: `Tool not found: ${call.tool_name}`,
+          };
+        }
+
+        const response = await tool.run(call.params, { id: call.id });
+
+        return response;
+      });
+
+      const tools_responses = (
+        await Promise.allSettled(tool_responses_promises)
+      )
+        .map((res) => {
+          if (res.status === "fulfilled") {
+            return res.value;
+          }
+
+          console.error("Error during tool execution:", res.reason);
+        })
+        .filter((res) => res);
+
+      if (!recursive) {
+        return inter_message;
+      }
+
+      return await this.infer({
+        model,
+        messages: [
+          ...messages,
+          inter_message,
+          ...(tools_responses as ToolResponse[]),
+        ],
+        agent_name,
+        tools,
+      });
+    }
+
+    return inter_message;
   }
 }
 
@@ -94,7 +151,9 @@ export function convertMessageToChatCompletionMessageParam(
       return {
         role: "user",
         name: message.name,
-        content: message.content,
+        content:
+          convertMessageContentToChatCompletionContentPart(message.content) ??
+          "",
       };
     case "ai":
       return {
@@ -102,20 +161,20 @@ export function convertMessageToChatCompletionMessageParam(
         name: message.name,
         content: message.content,
       };
-    case "tool_call":
+    case "tool_calls":
       return {
         role: "assistant",
         content: message.content || null,
-        tool_calls: [
-          {
-            id: message.id || "",
-            type: "function",
+        tool_calls: message.calls.map((call) => {
+          return {
+            id: call.id,
             function: {
-              name: message.tool_name,
-              arguments: JSON.stringify(message.params),
+              name: call.tool_name,
+              arguments: JSON.stringify(call.params),
             },
-          },
-        ],
+            type: "function",
+          };
+        }),
       };
     case "tool_response":
       return {
@@ -124,6 +183,37 @@ export function convertMessageToChatCompletionMessageParam(
         tool_call_id: message.id,
       };
   }
+}
+
+function convertMessageContentToChatCompletionContentPart(
+  content: MessageContent,
+): ChatCompletionContentPart[] | string | null {
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content.map((part) => {
+      if (part.type === "image") {
+        return {
+          type: "image_url",
+          image_url: {
+            url: part.url,
+            detail: part.detail,
+          },
+        };
+      }
+
+      return {
+        type: "input_audio",
+        input_audio: {
+          data: part.url,
+          format: part.format,
+        },
+      };
+    });
+  }
+  return null;
 }
 
 export function convertChatCompletionMessageParamToMessage(
@@ -142,14 +232,18 @@ export function convertChatCompletionMessageParamToMessage(
       };
     case "assistant":
       if (param.tool_calls && param.tool_calls.length > 0) {
-        const toolCall = param.tool_calls[0];
+        const toolCalls = param.tool_calls.map((toolCall) => {
+          return {
+            id: toolCall.id,
+            tool_name: toolCall.function.name,
+            params: JSON.parse(toolCall.function.arguments),
+          };
+        });
+
         return {
-          role: "tool_call",
-          tool_name: toolCall.function.name,
-          name: model_name,
+          role: "tool_calls",
           content: param.content?.toString() || undefined,
-          params: JSON.parse(toolCall.function.arguments),
-          id: toolCall.id,
+          calls: toolCalls,
         };
       } else {
         return {
@@ -165,7 +259,6 @@ export function convertChatCompletionMessageParamToMessage(
       return {
         id: param.tool_call_id,
         role: "tool_response",
-        name: model_name || "",
         content: param.content.toString(),
       };
     default:

@@ -8,7 +8,8 @@ const res = await infer({
     {
       role: "human",
       name: "raj",
-      content: "Hello, how does that sound",
+      content:
+        "This is a test to check your tools calling ability, call the tool u hv twice, and also give some indicator to the user like 'im calling the tool now'",
     },
   ],
   tools: [
