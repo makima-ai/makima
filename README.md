@@ -1,5 +1,7 @@
 # makima
 
+A Simpler Agent Framework
+
 To install dependencies:
 
 ```bash
