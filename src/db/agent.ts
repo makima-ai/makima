@@ -75,6 +75,47 @@ export const deleteAgent = async (id: string) => {
   }
 };
 
+export const getAgentTools = async (agentIdOrName: string) => {
+  try {
+    let agent;
+    if (agentIdOrName.length === 36) {
+      // Assuming UUID length for id
+      [agent] = await db
+        .select()
+        .from(agentsTable)
+        .where(eq(agentsTable.id, agentIdOrName));
+    } else {
+      [agent] = await db
+        .select()
+        .from(agentsTable)
+        .where(eq(agentsTable.name, agentIdOrName));
+    }
+
+    if (!agent) {
+      throw new Error("Agent not found");
+    }
+
+    const tools = await db
+      .select({
+        id: toolsTable.id,
+        name: toolsTable.name,
+        description: toolsTable.description,
+        params: toolsTable.params,
+        endpoint: toolsTable.endpoint,
+        method: toolsTable.method,
+        createdAt: toolsTable.createdAt,
+      })
+      .from(agentToolsTable)
+      .innerJoin(toolsTable, eq(agentToolsTable.toolId, toolsTable.id))
+      .where(eq(agentToolsTable.agentId, agent.id));
+
+    return tools;
+  } catch (error) {
+    console.error("Error getting agent tools:", error);
+    throw error;
+  }
+};
+
 // Tool CRUD operations
 
 export const createTool = async (tool: {

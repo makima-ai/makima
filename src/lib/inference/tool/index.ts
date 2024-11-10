@@ -30,6 +30,10 @@ export class Tool<T extends ZodSchema> implements ToolInterface {
 
       let result = await this.function(params as InferParams<T>);
 
+      if (typeof result !== "string") {
+        result = JSON.stringify(result);
+      }
+
       return {
         id,
         role: "tool_response",

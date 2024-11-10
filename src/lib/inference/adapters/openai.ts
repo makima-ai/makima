@@ -103,6 +103,7 @@ export class OpenAIAdapter implements ModelAdapter {
       )
         .map((res) => {
           if (res.status === "fulfilled") {
+            onMessage?.(res.value as ToolResponse);
             return res.value;
           }
 

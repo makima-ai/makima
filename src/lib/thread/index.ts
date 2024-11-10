@@ -1,4 +1,4 @@
-import { getAgentById } from "../../db/agent";
+import { getAgentById, getAgentTools } from "../../db/agent";
 import {
   getThreadDetailsById,
   getMessagesByThreadId,
@@ -6,6 +6,7 @@ import {
 } from "../../db/thread";
 import { universalInfer } from "../inference";
 import type { UserMessage, OutputMessage, Message } from "../inference/types";
+import { createToolFromDb, type DbTool } from "./tool";
 
 export async function threadInfer({
   threadId,
@@ -54,10 +55,15 @@ export async function threadInfer({
     };
 
     // Step 5: Run universalInfer
+
+    const dbtools: DbTool[] = await getAgentTools(agent.id);
+
+    const tools = dbtools.map(createToolFromDb);
+
     const result = await universalInfer({
       model: agent.primaryModel,
       messages: contextMessages,
-      // tools: agent.tools,
+      tools,
       onMessage,
     });
 

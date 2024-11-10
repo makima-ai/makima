@@ -14,11 +14,10 @@ import type {
 // Helper function to convert DbMessage to Message
 function dbMessageToMessage(dbMessage: DbMessage): Message {
   const baseMessage = {
-    id: dbMessage.id,
+    db_id: dbMessage.id,
     context_id: dbMessage.context_id,
     author_id: dbMessage.author_id,
     createdAt: dbMessage.createdAt,
-    callId: dbMessage.callId,
     calls: dbMessage.calls,
   };
 
@@ -53,6 +52,7 @@ function dbMessageToMessage(dbMessage: DbMessage): Message {
         ...baseMessage,
         role: "tool_response",
         content: dbMessage.content as string,
+        id: dbMessage.callId as string,
       };
     default:
       throw new Error(`Unknown message role: ${dbMessage.role}`);
