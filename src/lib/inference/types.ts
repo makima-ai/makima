@@ -1,4 +1,5 @@
 import type { ZodSchema, infer as InferZod } from "zod";
+import type { contextsTable, messagesTable } from "../../db/schema";
 
 export type MessageContent = string | (ImageContent | AudioContent)[];
 
@@ -58,19 +59,44 @@ export type Message = UserMessage | AiMessage | ToolCalls | ToolResponse;
 
 export type OutputMessage = AiMessage | ToolCalls;
 
+export type Context = {
+  id: string;
+  platform: string | null;
+  description: string | null;
+  authors: string[];
+  default_agent_id: string | null;
+  default_agent?: {
+    id: string;
+    name: string;
+  } | null;
+};
+
+export type DbMessage = typeof messagesTable.$inferSelect;
+export type DbMessageInsert = typeof messagesTable.$inferInsert;
+
+export type DbContext = typeof contextsTable.$inferSelect;
+export type DbContextInsert = typeof contextsTable.$inferInsert;
+
 export type ToolContext = {
   id: string;
 };
 
-type InferParams<T extends ZodSchema = ZodSchema<any>> = T extends ZodSchema
-  ? InferZod<T>
-  : unknown;
+export type InferParams<T extends ZodSchema = ZodSchema<any>> =
+  T extends ZodSchema ? InferZod<T> : unknown;
 
 export interface Tool<T extends ZodSchema = ZodSchema<any>> {
   name: string;
   run: (params: InferParams<T>, context: ToolContext) => Promise<ToolResponse>;
   params?: T;
 }
+
+export type ToolProps<T extends ZodSchema> = {
+  name?: string;
+  params: T;
+  function: (params: InferParams<T>) => Promise<unknown>;
+  parse?: (params: string) => object | string;
+  errorParser?: (error: unknown) => string;
+};
 
 export interface ModelAdapter {
   ask(params: {
@@ -86,5 +112,6 @@ export interface ModelAdapter {
     tools?: Tool[];
     agent_name?: string;
     recursive?: boolean;
+    onMessage?: (message: Message) => void;
   }): Promise<OutputMessage>;
 }

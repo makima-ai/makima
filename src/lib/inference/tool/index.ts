@@ -1,19 +1,11 @@
 import type {
+  InferParams,
   ToolContext,
   Tool as ToolInterface,
+  ToolProps,
   ToolResponse,
 } from "../types";
-import type { ZodSchema, infer as InferZod } from "zod";
-
-type InferParams<T extends ZodSchema> = InferZod<T>;
-
-type ToolProps<T extends ZodSchema> = {
-  name?: string;
-  params: T;
-  function: (params: InferParams<T>) => Promise<unknown>;
-  parse?: (params: string) => object | string;
-  errorParser?: (error: unknown) => string;
-};
+import type { ZodSchema } from "zod";
 
 export class Tool<T extends ZodSchema> implements ToolInterface {
   public name: string;

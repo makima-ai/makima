@@ -19,14 +19,16 @@ function createAdapter(provider: string): ModelAdapter {
   }
 }
 
-export async function infer({
+export async function universalInfer({
   model,
   messages,
   tools,
+  onMessage,
 }: {
   model: string;
   messages: Message[];
   tools?: Tool[];
+  onMessage?: (message: Message) => void;
 }): Promise<OutputMessage> {
   const modelParts = model.split("/");
 
@@ -43,6 +45,7 @@ export async function infer({
       model: modelName,
       messages,
       tools,
+      onMessage,
     });
     return result;
   } catch (error) {

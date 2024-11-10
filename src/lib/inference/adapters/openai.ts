@@ -54,12 +54,14 @@ export class OpenAIAdapter implements ModelAdapter {
     agent_name,
     tools,
     recursive = true,
+    onMessage,
   }: {
     model: string;
     messages: Message[];
     agent_name?: string;
     tools?: Tool[];
     recursive?: boolean;
+    onMessage?: (message: Message) => void;
   }): Promise<OutputMessage> {
     const omessages: ChatCompletionMessageParam[] = messages.map(
       convertMessageToChatCompletionMessageParam,
@@ -77,6 +79,8 @@ export class OpenAIAdapter implements ModelAdapter {
       res.choices[0].message,
       agent_name,
     ) as OutputMessage;
+
+    onMessage?.(inter_message);
 
     if (inter_message.role === "tool_calls") {
       const tool_responses_promises = inter_message.calls.map(async (call) => {
@@ -119,6 +123,7 @@ export class OpenAIAdapter implements ModelAdapter {
         ],
         agent_name,
         tools,
+        onMessage,
       });
     }
 
