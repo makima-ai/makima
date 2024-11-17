@@ -40,6 +40,7 @@ A Web based Agent Framework
    ```bash
    docker compose -f dev-docker-compose.yml up -d
    ```
+3. run bunx drizzle-kit push to update the database schema from project to the newly started db instance.
 
 ### Setting up the Tools Server
 
