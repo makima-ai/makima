@@ -111,10 +111,10 @@ Use the following curl commands to set up your environment:
 
    ```bash
    curl --request POST \
-     --url http://localhost:7777/agent/[AGENT_ID]/add-tool/[TOOL_ID]
+     --url http://localhost:7777/agent/[AGENT_NAME]/add-tool/[TOOL_NAME]
    ```
 
-   Replace `[AGENT_ID]` and `[TOOL_ID]` with the respective IDs. To get these IDs:
+   Replace `[AGENT_NAME]` and `[TOOL_NAME]` with the respective IDs. To get these IDs:
 
    For agents:
 

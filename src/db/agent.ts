@@ -45,6 +45,31 @@ export const getAgentById = async (id: string) => {
   }
 };
 
+export const getAgentByName = async (name: string) => {
+  try {
+    const [agent] = await db
+      .select()
+      .from(agentsTable)
+      .where(eq(agentsTable.name, name));
+    if (!agent) return null;
+
+    const tools = await db
+      .select({
+        id: toolsTable.id,
+        name: toolsTable.name,
+        description: toolsTable.description,
+      })
+      .from(agentToolsTable)
+      .innerJoin(toolsTable, eq(agentToolsTable.toolId, toolsTable.id))
+      .where(eq(agentToolsTable.agentId, agent.id));
+
+    return { ...agent, tools };
+  } catch (error) {
+    console.error("Error getting agent:", error);
+    throw error;
+  }
+};
+
 export const updateAgent = async (
   id: string,
   updates: Partial<typeof agentsTable.$inferInsert>,
@@ -202,6 +227,32 @@ export const addToolToAgent = async (agentId: string, toolId: string) => {
   }
 };
 
+export const addToolToAgentByName = async (
+  agentName: string,
+  toolName: string,
+) => {
+  try {
+    const agent = await getAgentByName(agentName);
+    if (!agent) {
+      throw new Error("Agent not found");
+    }
+
+    const tool = await getToolByName(toolName);
+    if (!tool) {
+      throw new Error("Tool not found");
+    }
+
+    await db.insert(agentToolsTable).values({
+      agentId: agent.id,
+      toolId: tool.id,
+    });
+    return await getAgentById(agent.id);
+  } catch (error) {
+    console.error("Error adding tool to agent by name:", error);
+    throw error;
+  }
+};
+
 export const removeToolFromAgent = async (agentId: string, toolId: string) => {
   try {
     await db
@@ -215,6 +266,36 @@ export const removeToolFromAgent = async (agentId: string, toolId: string) => {
     return await getAgentById(agentId);
   } catch (error) {
     console.error("Error removing tool from agent:", error);
+    throw error;
+  }
+};
+
+export const removeToolFromAgentByName = async (
+  agentName: string,
+  toolName: string,
+) => {
+  try {
+    const agent = await getAgentByName(agentName);
+    if (!agent) {
+      throw new Error("Agent not found");
+    }
+
+    const tool = await getToolByName(toolName);
+    if (!tool) {
+      throw new Error("Tool not found");
+    }
+
+    await db
+      .delete(agentToolsTable)
+      .where(
+        and(
+          eq(agentToolsTable.agentId, agent.id),
+          eq(agentToolsTable.toolId, tool.id),
+        ),
+      );
+    return await getAgentById(agent.id);
+  } catch (error) {
+    console.error("Error removing tool from agent by name:", error);
     throw error;
   }
 };

@@ -19,10 +19,10 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
   // Get thread details by ID
   .get(
     "/:id",
-    async ({ params: { id } }) => {
+    async ({ params: { id }, error }) => {
       const threadDetails = await getThreadDetailsById(id);
       if (!threadDetails) {
-        return { error: "Thread not found" };
+        return error(404, "Thread not found");
       }
       return threadDetails;
     },
@@ -37,9 +37,6 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
     "/:id/messages",
     async ({ params: { id } }) => {
       const messages = await getMessagesByThreadId(id);
-      if (messages.length === 0) {
-        return { error: "No messages found for this thread" };
-      }
       return messages;
     },
     {
@@ -155,10 +152,10 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
   // Delete a thread
   .delete(
     "/:id",
-    async ({ params: { id } }) => {
+    async ({ params: { id }, error }) => {
       const result = await deleteThread(id);
       if (!result.success) {
-        return { error: "Thread not found or could not be deleted" };
+        return error(404, "Thread not found");
       }
       return {
         message: "Thread deleted",
@@ -174,11 +171,11 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
   // Update thread's default agent
   .put(
     "/:id/agent",
-    async ({ params: { id }, body }) => {
+    async ({ params: { id }, body, error }) => {
       const { agentName } = body;
       const updatedThread = await updateThreadAgent(id, agentName);
       if (!updatedThread) {
-        return { error: "Thread not found or agent could not be updated" };
+        return error(404, "Thread not found or agent could not be updated");
       }
       return updatedThread;
     },

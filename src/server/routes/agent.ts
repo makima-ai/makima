@@ -6,13 +6,16 @@ import {
   deleteAgent,
   addToolToAgent,
   removeToolFromAgent,
-  getToolById,
   createTool,
   updateTool,
   deleteTool,
   listAllAgents,
   listAllTools,
   getToolByName,
+  getToolById,
+  getAgentByName,
+  addToolToAgentByName,
+  removeToolFromAgentByName,
 } from "../../db/agent";
 
 export const agentRoute = new Elysia({ prefix: "/agent" })
@@ -23,10 +26,10 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   // Get agent by ID
   .get(
     "/:id",
-    async ({ params: { id } }) => {
+    async ({ params: { id }, error }) => {
       const agent = await getAgentById(id);
       if (!agent) {
-        return { error: "Agent not found" };
+        return error(404, "Agent not found");
       }
       return {
         ...agent,
@@ -62,10 +65,10 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   // Update an agent
   .put(
     "/:id",
-    async ({ params: { id }, body }) => {
+    async ({ params: { id }, body, error }) => {
       const updatedAgent = await updateAgent(id, body);
       if (!updatedAgent) {
-        return { error: "Agent not found" };
+        return error(404, "Agent not found");
       }
       return updatedAgent;
     },
@@ -87,10 +90,10 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   // Delete an agent
   .delete(
     "/:id",
-    async ({ params: { id } }) => {
+    async ({ params: { id }, error }) => {
       const deletedAgent = await deleteAgent(id);
       if (!deletedAgent) {
-        return { error: "Agent not found" };
+        return error(404, "Agent not found");
       }
       return { message: "Agent deleted successfully" };
     },
@@ -103,30 +106,51 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
 
   // Add tool to agent
   .post(
-    "/:id/add-tool/:toolId",
-    async ({ params: { id, toolId } }) => {
-      const updatedAgent = await addToolToAgent(id, toolId);
+    "/:agentName/add-tool/:toolName",
+    async ({ params: { agentName, toolName }, error }) => {
+      const agent = await getAgentByName(agentName);
+      if (!agent) {
+        return error(404, "Agent not found");
+      }
+
+      const tool = await getToolByName(toolName);
+
+      if (!tool) {
+        return error(404, "Tool not found");
+      }
+
+      const updatedAgent = await addToolToAgentByName(agentName, toolName);
       return updatedAgent;
     },
     {
       params: t.Object({
-        id: t.String(),
-        toolId: t.String(),
+        agentName: t.String(),
+        toolName: t.String(),
       }),
     },
   )
 
   // Remove tool from agent
   .post(
-    "/:id/remove-tool/:toolId",
-    async ({ params: { id, toolId } }) => {
-      const updatedAgent = await removeToolFromAgent(id, toolId);
+    "/:agentName/remove-tool/:toolName",
+    async ({ params: { agentName, toolName }, error }) => {
+      const agent = await getAgentByName(agentName);
+      if (!agent) {
+        return error(404, "Agent not found");
+      }
+
+      const tool = await getToolByName(toolName);
+      if (!tool) {
+        return error(404, "Tool not found");
+      }
+
+      const updatedAgent = await removeToolFromAgentByName(agentName, toolName);
       return updatedAgent;
     },
     {
       params: t.Object({
-        id: t.String(),
-        toolId: t.String(),
+        agentName: t.String(),
+        toolName: t.String(),
       }),
     },
   );
@@ -174,10 +198,10 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
   // Update a tool
   .put(
     "/:id",
-    async ({ params: { id }, body }) => {
+    async ({ params: { id }, body, error }) => {
       const updatedTool = await updateTool(id, body);
       if (!updatedTool) {
-        return { error: "Tool not found" };
+        return error(404, "Tool not found");
       }
       return updatedTool;
     },
@@ -198,10 +222,10 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
   // Delete a tool
   .delete(
     "/:id",
-    async ({ params: { id } }) => {
+    async ({ params: { id }, error }) => {
       const deletedTool = await deleteTool(id);
       if (!deletedTool) {
-        return { error: "Tool not found" };
+        return error(404, "Tool not found");
       }
       return { message: "Tool deleted successfully" };
     },
