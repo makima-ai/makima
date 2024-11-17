@@ -1,7 +1,14 @@
 import { z } from "zod";
 
 // Define the expected environment variables using Zod
-const envSchema = z.object({});
+const envSchema = z.object({
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_BASE_URL: z.string().url().optional(),
+  DATABASE_URL: z.string().url(),
+  PORT: z.string().default("7777"),
+  BETTER_AUTH_SECRET: z.string(),
+  BETTER_AUTH_URL: z.string().url(),
+});
 
 // Parse and validate environment variables
 const parsedEnv = envSchema.safeParse(process.env);
