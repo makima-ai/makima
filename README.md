@@ -37,10 +37,15 @@ A Web based Agent Framework
    Replace `sk-proj-xxx` with your actual OpenAI API key.
 
 2. Start the development PostgreSQL server:
+
    ```bash
    docker compose -f dev-docker-compose.yml up -d
    ```
-3. run bunx drizzle-kit push to update the database schema from project to the newly started db instance.
+
+3. update the database schema from project to the newly started db instance.
+   ```bash
+   bunx drizzle-kit push
+   ```
 
 ### Setting up the Tools Server
 
@@ -50,6 +55,8 @@ A Web based Agent Framework
    git clone git@github.com:makima-ai/tools-server.git
    cd tools-server
    ```
+
+````
 
 2. Follow the setup instructions in the [tools-server](https://github.com/makima-ai/tools-server) project README.
 
@@ -153,3 +160,4 @@ You should receive a response similar to:
   "content": "The current date and time is **November 10, 2024, 11:16:26 PM**."
 }
 ```
+````
