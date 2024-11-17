@@ -12,6 +12,7 @@ import {
   deleteTool,
   listAllAgents,
   listAllTools,
+  getToolByName,
 } from "../../db/agent";
 
 export const agentRoute = new Elysia({ prefix: "/agent" })
@@ -135,19 +136,19 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
     const tools = await listAllTools();
     return tools;
   })
-  // Get tool by ID
+  // Get tool by name
   .get(
-    "/:id",
-    async ({ params: { id } }) => {
-      const tool = await getToolById(id);
+    "/:name",
+    async ({ params: { name }, error }) => {
+      const tool = await getToolByName(name);
       if (!tool) {
-        return { error: "Tool not found" };
+        return error(404, "Tool not found");
       }
       return tool;
     },
     {
       params: t.Object({
-        id: t.String(),
+        name: t.String(),
       }),
     },
   )

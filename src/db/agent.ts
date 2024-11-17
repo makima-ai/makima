@@ -147,6 +147,19 @@ export const getToolById = async (id: string) => {
   }
 };
 
+export const getToolByName = async (name: string) => {
+  try {
+    const [tool] = await db
+      .select()
+      .from(toolsTable)
+      .where(eq(toolsTable.name, name));
+    return tool || null;
+  } catch (error) {
+    console.error("Error getting tool:", error);
+    throw error;
+  }
+};
+
 export const updateTool = async (
   id: string,
   updates: Partial<typeof toolsTable.$inferInsert>,
