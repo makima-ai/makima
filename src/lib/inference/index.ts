@@ -1,3 +1,4 @@
+import { env } from "../../env";
 import { OpenAIAdapter } from "./adapters/openai";
 import type { Message, ModelAdapter, OutputMessage, Tool } from "./types";
 
@@ -5,11 +6,8 @@ function createAdapter(provider: string): ModelAdapter {
   switch (provider.toLowerCase()) {
     case "openai":
       const openAIConfig: ConstructorParameters<typeof OpenAIAdapter>[0] = {
-        apiKey: process.env.OPENAI_API_KEY,
-        baseURL: process.env.OPENAI_BASE_URL,
-        timeout: parseInt(process.env.OPENAI_TIMEOUT || "30000"),
-        maxRetries: parseInt(process.env.OPENAI_MAX_RETRIES || "3"),
-        organization: process.env.OPENAI_ORGANIZATION,
+        apiKey: env.OPENAI_API_KEY,
+        baseURL: env.OPENAI_BASE_URL,
       };
 
       return new OpenAIAdapter(openAIConfig);

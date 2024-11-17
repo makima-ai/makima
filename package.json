@@ -8,10 +8,15 @@
     "drizzle-kit": "^0.28.0",
     "tsx": "^4.19.2"
   },
+  "scripts": {
+    "dev": "bun run --watch ."
+  },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@elysiajs/server-timing": "^1.1.0",
+    "better-auth": "^0.8.4-beta.7",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.36.1",
     "elysia": "^1.1.24",
