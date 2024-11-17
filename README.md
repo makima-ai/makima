@@ -56,8 +56,6 @@ A Web based Agent Framework
    cd tools-server
    ```
 
-````
-
 2. Follow the setup instructions in the [tools-server](https://github.com/makima-ai/tools-server) project README.
 
 ## Usage
@@ -160,4 +158,3 @@ You should receive a response similar to:
   "content": "The current date and time is **November 10, 2024, 11:16:26 PM**."
 }
 ```
-````
