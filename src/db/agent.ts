@@ -71,14 +71,14 @@ export const getAgentByName = async (name: string) => {
 };
 
 export const updateAgent = async (
-  id: string,
+  name: string,
   updates: Partial<typeof agentsTable.$inferInsert>,
 ) => {
   try {
     const [updatedAgent] = await db
       .update(agentsTable)
       .set(updates)
-      .where(eq(agentsTable.id, id))
+      .where(eq(agentsTable.name, name))
       .returning();
     return updatedAgent;
   } catch (error) {
@@ -87,11 +87,11 @@ export const updateAgent = async (
   }
 };
 
-export const deleteAgent = async (id: string) => {
+export const deleteAgent = async (name: string) => {
   try {
     const [deletedAgent] = await db
       .delete(agentsTable)
-      .where(eq(agentsTable.id, id))
+      .where(eq(agentsTable.name, name))
       .returning();
     return deletedAgent;
   } catch (error) {

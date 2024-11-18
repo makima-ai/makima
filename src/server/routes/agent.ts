@@ -23,11 +23,11 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
     const agents = await listAllAgents();
     return agents;
   })
-  // Get agent by ID
+  // Get agent by name
   .get(
-    "/:id",
-    async ({ params: { id }, error }) => {
-      const agent = await getAgentById(id);
+    "/:name",
+    async ({ params: { name }, error }) => {
+      const agent = await getAgentByName(name);
       if (!agent) {
         return error(404, "Agent not found");
       }
@@ -38,11 +38,11 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        name: t.String(),
       }),
       detail: {
-        summary: "Get agent by ID",
-        description: "Gets the details of an agent by its ID. This response includes the tools associated with the agent along with the agent details such as name, description, prompt, primary model, and fallback models.",
+        summary: "Get agent by name",
+        description: "Gets the details of an agent by its name. This response includes the tools associated with the agent along with the agent details such as name, description, prompt, primary model, and fallback models.",
         tags: ["Agent"],
       },
     },
@@ -72,11 +72,12 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
     },
   )
 
-  // Update an agent
-  .put(
-    "/:id",
-    async ({ params: { id }, body, error }) => {
-      const updatedAgent = await updateAgent(id, body);
+
+  // update agent by name
+    .put(
+    "/:name",
+    async ({ params: { name }, body, error }) => {
+      const updatedAgent = await updateAgent(name, body);
       if (!updatedAgent) {
         return error(404, "Agent not found");
       }
@@ -84,7 +85,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        name: t.String(),
       }),
       body: t.Object({
         name: t.Optional(t.String()),
@@ -95,18 +96,19 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         tools: t.Optional(t.Array(t.String())),
       }),
       detail: {
-        summary: "Update an agent by ID",
-        description: "Updates the details of an existing agent by its ID. The agent details include the agent name, description, prompt, primary model, fallback models, and tools associated with the agent. These details are required to update an existing agent. whatever different details are provided will be updated.",
+        summary: "Update an agent by name",
+        description: "Updates the details of an existing agent by its name. The agent details include the agent name, description, prompt, primary model, fallback models, and tools associated with the agent. These details are required to update an existing agent. whatever different details are provided will be updated.",
         tags: ["Agent"],
       },
     },
   )
 
+
   // Delete an agent
   .delete(
-    "/:id",
-    async ({ params: { id }, error }) => {
-      const deletedAgent = await deleteAgent(id);
+    "/:name",
+    async ({ params: { name }, error }) => {
+      const deletedAgent = await deleteAgent(name);
       if (!deletedAgent) {
         return error(404, "Agent not found");
       }
@@ -114,11 +116,11 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        name: t.String(),
       }),
       detail: {
-        summary: "Delete an agent by ID",
-        description: "Deletes an agent by its ID. This operation is irreversible and will delete all the details associated with the agent, including the tools associated with the agent.",
+        summary: "Delete an agent by name",
+        description: "Deletes an agent by its name. This operation is irreversible and will delete all the details associated with the agent, including the tools associated with the agent.",
         tags: ["Agent"],
       },
     },
