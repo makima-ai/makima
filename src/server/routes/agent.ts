@@ -253,9 +253,9 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
 
   // Update a tool
   .put(
-    "/:id",
-    async ({ params: { id }, body, error }) => {
-      const updatedTool = await updateTool(id, body);
+    "/:name",
+    async ({ params: { name }, body, error }) => {
+      const updatedTool = await updateTool(name, body);
       if (!updatedTool) {
         return error(404, "Tool not found");
       }
@@ -263,7 +263,7 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        name: t.String(),
       }),
       body: t.Object({
         name: t.Optional(t.String()),
@@ -273,8 +273,8 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
         method: t.Optional(t.String()),
       }),
       detail: {
-        summary: "Update a tool by ID",
-        description: "Updates the details of an existing tool by its ID. The tool details include the tool name, description, parameters, endpoint, and method. These details are required to update an existing tool. whatever different details are provided will be updated.",
+        summary: "Update a tool by name",
+        description: "Updates the details of an existing tool by its name. The tool details include the tool name, description, parameters, endpoint, and method. These details are required to update an existing tool. whatever different details are provided will be updated.",
         tags: ["Tool"],
       },
     },
@@ -282,9 +282,9 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
 
   // Delete a tool
   .delete(
-    "/:id",
-    async ({ params: { id }, error }) => {
-      const deletedTool = await deleteTool(id);
+    "/:name",
+    async ({ params: { name }, error }) => {
+      const deletedTool = await deleteTool(name);
       if (!deletedTool) {
         return error(404, "Tool not found");
       }
@@ -292,11 +292,11 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        name: t.String(),
       }),
       detail: {
-        summary: "Delete a tool by ID",
-        description: "Deletes a tool by its ID. This operation is irreversible and will delete all the details associated with the tool.",
+        summary: "Delete a tool by name",
+        description: "Deletes a tool by its name. This operation is irreversible and will delete all the details associated with the tool.",
         tags: ["Tool"],
       },
     },
