@@ -22,7 +22,14 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   .get("/", async () => {
     const agents = await listAllAgents();
     return agents;
-  })
+  },{
+    detail: {
+      summary: "Get all agents",
+      description: "Get all agents in the system and their details such as name, description, prompt, primary model, fallback models, and tools.",
+      tags: ["Agent"],
+    },
+  }
+)
   // Get agent by name
   .get(
     "/:name",
