@@ -1,5 +1,6 @@
 import { env } from "../../env";
 import { OpenAIAdapter } from "./adapters/openai";
+import { OllamaAdapter } from "./adapters/ollama";
 import type { Message, ModelAdapter, OutputMessage, Tool } from "./types";
 
 function createAdapter(provider: string): ModelAdapter {
@@ -9,9 +10,12 @@ function createAdapter(provider: string): ModelAdapter {
         apiKey: env.OPENAI_API_KEY,
         baseURL: env.OPENAI_BASE_URL,
       };
-
       return new OpenAIAdapter(openAIConfig);
-    // Add cases for other providers here when they are implemented
+    case "ollama":
+      const ollamaConfig: ConstructorParameters<typeof OllamaAdapter>[0] = {
+        host: env.OLLAMA_HOST,
+      };
+      return new OllamaAdapter(ollamaConfig);
     default:
       throw new Error(`Unsupported provider: ${provider}`);
   }
@@ -49,5 +53,34 @@ export async function universalInfer({
   } catch (error) {
     console.error("Error during inference:", error);
     throw new Error("Failed to perform inference");
+  }
+}
+
+export async function generateWithImage({
+  model,
+  prompt,
+  imagePath,
+}: {
+  model: string;
+  prompt: string;
+  imagePath: string;
+}): Promise<string> {
+  const [provider, modelName] = model.split("/");
+
+  if (provider.toLowerCase() !== "ollama") {
+    throw new Error("Image generation is only supported with Ollama models");
+  }
+
+  const adapter = createAdapter(provider) as OllamaAdapter;
+
+  try {
+    return await adapter.generateWithImage({
+      model: modelName,
+      prompt,
+      imagePath,
+    });
+  } catch (error) {
+    console.error("Error during image generation:", error);
+    throw new Error("Failed to generate with image");
   }
 }
