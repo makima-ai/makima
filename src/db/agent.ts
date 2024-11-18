@@ -186,14 +186,14 @@ export const getToolByName = async (name: string) => {
 };
 
 export const updateTool = async (
-  id: string,
+  name: string,
   updates: Partial<typeof toolsTable.$inferInsert>,
 ) => {
   try {
     const [updatedTool] = await db
       .update(toolsTable)
       .set(updates)
-      .where(eq(toolsTable.id, id))
+      .where(eq(toolsTable.name, name))
       .returning();
     return updatedTool;
   } catch (error) {
@@ -202,11 +202,11 @@ export const updateTool = async (
   }
 };
 
-export const deleteTool = async (id: string) => {
+export const deleteTool = async (name: string) => {
   try {
     const [deletedTool] = await db
       .delete(toolsTable)
-      .where(eq(toolsTable.id, id))
+      .where(eq(toolsTable.name, name))
       .returning();
     return deletedTool;
   } catch (error) {
