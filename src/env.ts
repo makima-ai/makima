@@ -4,7 +4,7 @@ import { z } from "zod";
 const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_BASE_URL: z.string().url().optional(),
-  OLLAMA_HOST: z.string().url().optional(),
+  OLLAMA_HOST: z.string().url().default("http://127.0.0.1:11434"),
   DATABASE_URL: z.string().url(),
   PORT: z.string().default("7777"),
   BETTER_AUTH_SECRET: z.string(),
