@@ -22,12 +22,19 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   .get("/", async () => {
     const agents = await listAllAgents();
     return agents;
-  })
-  // Get agent by ID
+  },{
+    detail: {
+      summary: "Get all agents",
+      description: "Get all agents in the system and their details such as name, description, prompt, primary model, fallback models, and tools.",
+      tags: ["Agent"],
+    },
+  }
+)
+  // Get agent by name
   .get(
-    "/:id",
-    async ({ params: { id }, error }) => {
-      const agent = await getAgentById(id);
+    "/:name",
+    async ({ params: { name }, error }) => {
+      const agent = await getAgentByName(name);
       if (!agent) {
         return error(404, "Agent not found");
       }
@@ -38,8 +45,13 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        name: t.String(),
       }),
+      detail: {
+        summary: "Get agent by name",
+        description: "Gets the details of an agent by its name. This response includes the tools associated with the agent along with the agent details such as name, description, prompt, primary model, and fallback models.",
+        tags: ["Agent"],
+      },
     },
   )
 
@@ -59,14 +71,20 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         fallbackModels: t.Optional(t.Array(t.String())),
         tools: t.Optional(t.Array(t.String())),
       }),
+      detail: {
+        summary: "Create a new agent",
+        description: "Creates a new agent with the provided details. The agent details include the agent name, description, prompt, primary model, fallback models, and tools associated with the agent. These details are required to create a new agent.",
+        tags: ["Agent"],
+      },
     },
   )
 
-  // Update an agent
-  .put(
-    "/:id",
-    async ({ params: { id }, body, error }) => {
-      const updatedAgent = await updateAgent(id, body);
+
+  // update agent by name
+    .put(
+    "/:name",
+    async ({ params: { name }, body, error }) => {
+      const updatedAgent = await updateAgent(name, body);
       if (!updatedAgent) {
         return error(404, "Agent not found");
       }
@@ -74,7 +92,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        name: t.String(),
       }),
       body: t.Object({
         name: t.Optional(t.String()),
@@ -84,14 +102,20 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         fallbackModels: t.Optional(t.Array(t.String())),
         tools: t.Optional(t.Array(t.String())),
       }),
+      detail: {
+        summary: "Update an agent by name",
+        description: "Updates the details of an existing agent by its name. The agent details include the agent name, description, prompt, primary model, fallback models, and tools associated with the agent. These details are required to update an existing agent. whatever different details are provided will be updated.",
+        tags: ["Agent"],
+      },
     },
   )
 
+
   // Delete an agent
   .delete(
-    "/:id",
-    async ({ params: { id }, error }) => {
-      const deletedAgent = await deleteAgent(id);
+    "/:name",
+    async ({ params: { name }, error }) => {
+      const deletedAgent = await deleteAgent(name);
       if (!deletedAgent) {
         return error(404, "Agent not found");
       }
@@ -99,8 +123,13 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        name: t.String(),
       }),
+      detail: {
+        summary: "Delete an agent by name",
+        description: "Deletes an agent by its name. This operation is irreversible and will delete all the details associated with the agent, including the tools associated with the agent.",
+        tags: ["Agent"],
+      },
     },
   )
 
@@ -127,6 +156,11 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         agentName: t.String(),
         toolName: t.String(),
       }),
+      detail: {
+        summary: "Add tool to agent",
+        description: "Adds a tool to an agent by the agent name and tool name. This operation is used to associate a tool with an agent.",
+        tags: ["Agent"],
+      },
     },
   )
 
@@ -152,6 +186,11 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         agentName: t.String(),
         toolName: t.String(),
       }),
+      detail: {
+        summary: "Remove tool from agent",
+        description: "Removes a tool from an agent by the agent name and tool name. This operation is used to disassociate a tool from an agent.",
+        tags: ["Agent"],
+      },
     },
   );
 
@@ -159,7 +198,14 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
   .get("/", async () => {
     const tools = await listAllTools();
     return tools;
-  })
+  },{
+    detail: {
+      summary: "Get all tools",
+      description: "Get all tools in the system and their details such as name, description, endpoint, method, and parameters.",
+      tags: ["Tool"],
+    },
+  }
+)
   // Get tool by name
   .get(
     "/:name",
@@ -174,6 +220,11 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
       params: t.Object({
         name: t.String(),
       }),
+      detail: {
+        summary: "Get tool by name",
+        description: "Gets the details of a tool by its name. This response includes the tool details such as name, description, endpoint, method, and parameters.",
+        tags: ["Tool"],
+      },
     },
   )
 
@@ -192,14 +243,19 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
         endpoint: t.String(),
         method: t.String(),
       }),
+      detail: {
+        summary: "Create a new tool",
+        description: "Creates a new tool with the provided details. The tool details include the tool name, description, parameters, endpoint, and method. These details are required to create a new tool.",
+        tags: ["Tool"],
+      },
     },
   )
 
   // Update a tool
   .put(
-    "/:id",
-    async ({ params: { id }, body, error }) => {
-      const updatedTool = await updateTool(id, body);
+    "/:name",
+    async ({ params: { name }, body, error }) => {
+      const updatedTool = await updateTool(name, body);
       if (!updatedTool) {
         return error(404, "Tool not found");
       }
@@ -207,7 +263,7 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        name: t.String(),
       }),
       body: t.Object({
         name: t.Optional(t.String()),
@@ -216,14 +272,19 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
         endpoint: t.Optional(t.String()),
         method: t.Optional(t.String()),
       }),
+      detail: {
+        summary: "Update a tool by name",
+        description: "Updates the details of an existing tool by its name. The tool details include the tool name, description, parameters, endpoint, and method. These details are required to update an existing tool. whatever different details are provided will be updated.",
+        tags: ["Tool"],
+      },
     },
   )
 
   // Delete a tool
   .delete(
-    "/:id",
-    async ({ params: { id }, error }) => {
-      const deletedTool = await deleteTool(id);
+    "/:name",
+    async ({ params: { name }, error }) => {
+      const deletedTool = await deleteTool(name);
       if (!deletedTool) {
         return error(404, "Tool not found");
       }
@@ -231,7 +292,12 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        name: t.String(),
       }),
+      detail: {
+        summary: "Delete a tool by name",
+        description: "Deletes a tool by its name. This operation is irreversible and will delete all the details associated with the tool.",
+        tags: ["Tool"],
+      },
     },
   );

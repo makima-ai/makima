@@ -3,8 +3,54 @@ import { threadRoute } from "./routes/thread";
 import { agentRoute, toolRoute } from "./routes/agent";
 import { env } from "../env";
 import serverTiming from "@elysiajs/server-timing";
+import { swagger } from '@elysiajs/swagger'
 
-const app = new Elysia();
+
+const app = new Elysia()
+
+app.use(
+  swagger({
+    autoDarkMode: true,
+    scalarConfig: {
+      customCss: `body {background:var(--scalar-background-2);}`,
+    },
+
+    documentation: {
+      info: {
+        title: "Makima",
+        version: `1.0`,
+        contact: {
+          name: "makima",
+          email: "makima.org",
+        },
+      },
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: "http",
+            scheme: "bearer",
+          },
+        },
+      },
+      // security: [{ bearerAuth: [] }],
+      tags: [
+        {
+          name: "Threads",
+          description: "APIs for managing threads",
+        },
+        {
+          name: "Agents",
+          description: "APIs for managing agents",
+        },
+        {
+          name: "Tools",
+          description: "APIs for managing tools",
+        },
+
+      ],
+    },
+  }),
+);
 
 app.use(serverTiming());
 app.use(threadRoute);
