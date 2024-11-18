@@ -15,7 +15,20 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
   .get("/", async () => {
     const threads = await listAllThreads();
     return threads;
-  })
+  },
+  {
+    query: t.Object({
+      name: t.Optional(t.String()),
+    }),
+    detail: {
+      summary: "Get all threads",
+      description:
+        "Get all threads in the system.",
+      tags: ["Threads"],
+    },
+  },
+)
+  
   // Get thread details by ID
   .get(
     "/:id",
@@ -30,6 +43,12 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       params: t.Object({
         id: t.String(),
       }),
+      detail: {
+        summary: "Get threads by ID",
+        description:
+          "Gets the details of a thread by its ID.",
+        tags: ["Threads"],
+      },
     },
   )
   // Get messages of a thread by ID
@@ -43,6 +62,12 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       params: t.Object({
         id: t.String(),
       }),
+      detail: {
+        summary: "Get messages by thread ID",
+        description:
+          "Gets all messages of a thread by its Thread ID.",
+        tags: ["Threads"],
+      },
     },
   )
   // Create a new thread
@@ -67,7 +92,14 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
         authors: t.Optional(t.Array(t.String())),
         agentName: t.String(),
       }),
+      detail: {
+        summary: "Create a new thread",
+        description:
+          "Creates a new thread with the provided details such as platform, description, authors, and agent name.",
+        tags: ["Threads"],
+      },
     },
+    
   )
   // Add a message to a thread
   .post(
@@ -95,6 +127,12 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
         content: t.String(),
         authorId: t.String(),
       }),
+      detail: {
+        summary: "Add a message to a thread",
+        description:
+          "Adds a message to a thread with the provided details such as role, content, and author ID along with the thread ID on which the message should be added.",
+        tags: ["Threads"],
+      },
     },
   )
   // Thread inference (chat)
@@ -147,6 +185,12 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
           ),
         }),
       }),
+      detail: {
+        summary: "Thread inference (chat)",
+        description:
+          "Performs inference on a thread with the provided message and agent name along with the thread ID on which the inference should be performed.",
+        tags: ["Threads"],
+      },
     },
   )
   // Delete a thread
@@ -166,7 +210,13 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       params: t.Object({
         id: t.String(),
       }),
-    },
+      detail: {
+        summary: "Delete a thread",
+        description:
+          "Deletes a thread by its ID along with all the messages associated with it and returns the deleted messages count.",
+        tags: ["Threads"],
+      },
+   }
   )
   // Update thread's default agent
   .put(
@@ -186,5 +236,11 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       body: t.Object({
         agentName: t.String(),
       }),
+      detail: {
+        summary: "Update thread's default agent",
+        description:
+          "Updates the default agent of a thread by its ID with the provided agent name , can retrun not found or agent could not be updated",
+        tags: ["Threads"],
+      },
     },
   );
