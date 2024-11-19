@@ -7,7 +7,14 @@ import type {
   ChatResponse,
   GenerateRequest,
 } from "ollama";
-import type { Message, ModelAdapter, OutputMessage, Tool } from "../types";
+import type {
+  Embedding,
+  Document,
+  Message,
+  ModelAdapter,
+  OutputMessage,
+  Tool,
+} from "../types";
 
 export class OllamaAdapter implements ModelAdapter {
   private ollama: Ollama;
@@ -117,6 +124,23 @@ export class OllamaAdapter implements ModelAdapter {
     }
 
     return outputMessage;
+  }
+
+  async embed(params: {
+    documents: Document[];
+    model: string;
+  }): Promise<Embedding[]> {
+    const oembeddings = await this.ollama.embed({
+      model: params.model,
+      input: params.documents.map((doc) => doc.content),
+    });
+
+    const embeddings = oembeddings.embeddings.map((oembedding) => ({
+      model: params.model,
+      embeddings: [oembedding],
+    }));
+
+    return embeddings;
   }
 
   private convertMessageToOllamaFormat(message: Message): OllamaMessage {

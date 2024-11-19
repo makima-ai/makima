@@ -1,5 +1,7 @@
 import OpenAI, { type ClientOptions } from "openai";
 import type {
+  Document,
+  Embedding,
   Message,
   MessageContent,
   ModelAdapter,
@@ -142,6 +144,23 @@ export class OpenAIAdapter implements ModelAdapter {
     }
 
     return inter_message;
+  }
+  async embed(params: {
+    documents: Document[];
+    model: string;
+  }): Promise<Embedding[]> {
+    const oembeddings = await this.openai.embeddings.create({
+      model: params.model,
+      input: params.documents.map((doc) => doc.content),
+    });
+
+    const embeddings = oembeddings.data.map((embedding) => {
+      return {
+        model: params.model,
+        embeddings: [embedding.embedding],
+      };
+    });
+    return embeddings;
   }
 }
 

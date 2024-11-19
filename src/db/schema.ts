@@ -77,3 +77,15 @@ export const agentToolsRelations = relations(agentToolsTable, ({ one }) => ({
     references: [toolsTable.id],
   }),
 }));
+
+export const knowledgeStoresTable = pgTable("knowledge_stores", {
+  id: text("id")
+    .primaryKey()
+    .notNull()
+    .default(sql`gen_random_uuid()`),
+  name: text("name").unique().notNull(),
+  embedding_model: text("embedding_model").notNull(),
+  database_provider: text("database_provider").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});

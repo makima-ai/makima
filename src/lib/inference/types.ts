@@ -98,6 +98,18 @@ export type ToolProps<T extends ZodSchema> = {
   errorParser?: (error: unknown) => string;
 };
 
+export type Document = {
+  id: string;
+  content: string;
+  model: string;
+  metadata?: Record<string, string>;
+};
+
+export type Embedding = {
+  model: string;
+  embeddings: number[][];
+};
+
 export interface ModelAdapter {
   ask(params: {
     model: string;
@@ -116,4 +128,5 @@ export interface ModelAdapter {
     signal?: AbortSignal;
     onMessage?: (message: Message) => void;
   }): Promise<OutputMessage>;
+  embed(params: { documents: Document[]; model: string }): Promise<Embedding[]>;
 }
