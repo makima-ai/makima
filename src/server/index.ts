@@ -7,6 +7,7 @@ import { swagger } from "@elysiajs/swagger";
 
 const app = new Elysia();
 
+app.use(serverTiming());
 app.get("/", () => {
   return "Makima is alive";
 });
@@ -51,7 +52,6 @@ app.use(
   }),
 );
 
-app.use(serverTiming());
 app.use(threadRoute);
 app.use(agentRoute);
 app.use(toolRoute);
