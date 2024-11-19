@@ -2,7 +2,6 @@ import { env } from "../../env";
 import { OpenAIAdapter } from "./adapters/openai";
 import { OllamaAdapter } from "./adapters/ollama";
 import type { Message, ModelAdapter, OutputMessage, Tool } from "./types";
-import { OllamaOpenAIAdapter } from "./adapters/ollama-openai-sdk";
 
 function createAdapter(provider: string): ModelAdapter {
   switch (provider.toLowerCase()) {
@@ -15,11 +14,11 @@ function createAdapter(provider: string): ModelAdapter {
     // This is just a test adapter, using the ollama beta compatibility layer for openai sdk
     case "ollama-openai":
       const ollamaOpenaiConfig: ConstructorParameters<typeof OpenAIAdapter>[0] =
-      {
-        apiKey: "",
-        baseURL: `${env.OLLAMA_HOST}/v1`,
-      };
-      return new OllamaOpenAIAdapter(ollamaOpenaiConfig);
+        {
+          apiKey: "",
+          baseURL: `${env.OLLAMA_HOST}/v1`,
+        };
+      return new OpenAIAdapter(ollamaOpenaiConfig);
     case "ollama":
       const ollamaConfig: ConstructorParameters<typeof OllamaAdapter>[0] = {
         host: env.OLLAMA_HOST,

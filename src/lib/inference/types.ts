@@ -105,6 +105,7 @@ export interface ModelAdapter {
     tools?: Tool[];
     agent_name?: string;
     recursive?: boolean;
+    signal?: AbortSignal;
   }): Promise<OutputMessage>;
   infer(params: {
     model: string;
@@ -112,6 +113,7 @@ export interface ModelAdapter {
     tools?: Tool[];
     agent_name?: string;
     recursive?: boolean;
+    signal?: AbortSignal;
     onMessage?: (message: Message) => void;
   }): Promise<OutputMessage>;
 }

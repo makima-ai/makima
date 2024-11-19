@@ -27,20 +27,27 @@ export class OpenAIAdapter implements ModelAdapter {
     message,
     agent_name,
     tools,
+    signal,
   }: {
     model: string;
     message: Message;
     agent_name?: string;
     tools?: Tool[];
+    signal?: AbortSignal;
   }) {
     const omessage: ChatCompletionMessageParam =
       convertMessageToChatCompletionMessageParam(message);
 
-    const res = await this.openai.chat.completions.create({
-      model: model,
-      messages: [omessage],
-      tools: tools?.map(convertToolToChatCompletionTool),
-    });
+    const res = await this.openai.chat.completions.create(
+      {
+        model: model,
+        messages: [omessage],
+        tools: tools?.map(convertToolToChatCompletionTool),
+      },
+      {
+        signal,
+      },
+    );
 
     return convertChatCompletionMessageParamToMessage(
       res.choices[0].message,
@@ -54,6 +61,7 @@ export class OpenAIAdapter implements ModelAdapter {
     agent_name,
     tools,
     recursive = true,
+    signal,
     onMessage,
   }: {
     model: string;
@@ -61,6 +69,7 @@ export class OpenAIAdapter implements ModelAdapter {
     agent_name?: string;
     tools?: Tool[];
     recursive?: boolean;
+    signal?: AbortSignal;
     onMessage?: (message: Message) => void;
   }): Promise<OutputMessage> {
     const omessages: ChatCompletionMessageParam[] = messages.map(
@@ -69,11 +78,14 @@ export class OpenAIAdapter implements ModelAdapter {
 
     const otools = tools?.map(convertToolToChatCompletionTool);
 
-    const res = await this.openai.chat.completions.create({
-      model: model,
-      messages: omessages,
-      tools: otools,
-    });
+    const res = await this.openai.chat.completions.create(
+      {
+        model: model,
+        messages: omessages,
+        tools: otools,
+      },
+      { signal },
+    );
 
     const inter_message = convertChatCompletionMessageParamToMessage(
       res.choices[0].message,
@@ -125,6 +137,7 @@ export class OpenAIAdapter implements ModelAdapter {
         agent_name,
         tools,
         onMessage,
+        signal,
       });
     }
 

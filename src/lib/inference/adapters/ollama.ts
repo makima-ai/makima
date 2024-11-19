@@ -23,11 +23,13 @@ export class OllamaAdapter implements ModelAdapter {
     message,
     agent_name,
     tools,
+    signal,
   }: {
     model: string;
     message: Message;
     agent_name?: string;
     tools?: Tool[];
+    signal?: AbortSignal;
   }): Promise<OutputMessage> {
     const ollamaMessage = this.convertMessageToOllamaFormat(message);
     const chatRequest: ChatRequest & { stream?: false } = {
@@ -37,7 +39,14 @@ export class OllamaAdapter implements ModelAdapter {
       tools: tools ? this.convertToolsToOllamaFormat(tools) : undefined,
     };
 
+    if (signal) {
+      signal.onabort = () => {
+        this.ollama.abort();
+      };
+    }
+
     const response = await this.ollama.chat(chatRequest);
+
     return this.convertOllamaResponseToMessage(response, agent_name);
   }
 
@@ -47,6 +56,7 @@ export class OllamaAdapter implements ModelAdapter {
     agent_name,
     tools,
     recursive = true,
+    signal,
     onMessage,
   }: {
     model: string;
@@ -54,6 +64,7 @@ export class OllamaAdapter implements ModelAdapter {
     agent_name?: string;
     tools?: Tool[];
     recursive?: boolean;
+    signal?: AbortSignal;
     onMessage?: (message: Message) => void;
   }): Promise<OutputMessage> {
     const ollamaMessages = messages.map(this.convertMessageToOllamaFormat);
@@ -63,6 +74,12 @@ export class OllamaAdapter implements ModelAdapter {
       stream: false,
       tools: tools ? this.convertToolsToOllamaFormat(tools) : undefined,
     };
+
+    if (signal) {
+      signal.onabort = () => {
+        this.ollama.abort();
+      };
+    }
 
     const response = await this.ollama.chat(chatRequest);
     const outputMessage = this.convertOllamaResponseToMessage(
@@ -110,8 +127,8 @@ export class OllamaAdapter implements ModelAdapter {
           content: message.content as string,
           images: Array.isArray(message.content)
             ? message.content
-              .filter((c) => c.type === "image")
-              .map((c) => c.url)
+                .filter((c) => c.type === "image")
+                .map((c) => c.url)
             : undefined,
         };
       case "ai":
