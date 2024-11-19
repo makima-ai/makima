@@ -204,8 +204,3 @@ curl --request POST \
 Integrating tools in Makima allows you to extend the capabilities of your AI agents, enabling them to perform a wide range of tasks and access various services. By following this guide and adhering to best practices, you can create powerful, flexible, and maintainable tool integrations for your Makima-based applications.
 
 Remember that tools are separate entities from agents, and they need to be explicitly added to agents after creation. This modular approach allows for greater flexibility and reusability in your AI system architecture.
-
-```
-
-This document provides a comprehensive guide on integrating tools in Makima, covering all the main operations including creating, retrieving, updating, and deleting tools, as well as adding and removing tools from agents. It includes API endpoints, request examples, and best practices, adhering to the structure and completeness requirements specified in the internal reminder.
-```
