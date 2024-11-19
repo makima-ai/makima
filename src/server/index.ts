@@ -15,6 +15,11 @@ app.use(
     },
 
     documentation: {
+      servers: [
+        {
+          url: "http://localhost:7777",
+        },
+      ],
       info: {
         title: "Makima",
         version: `1.0`,
