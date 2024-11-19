@@ -1,7 +1,14 @@
 import { env } from "../../env";
 import { OpenAIAdapter } from "./adapters/openai";
 import { OllamaAdapter } from "./adapters/ollama";
-import type { Message, ModelAdapter, OutputMessage, Tool } from "./types";
+import type {
+  Message,
+  Document,
+  ModelAdapter,
+  OutputMessage,
+  Tool,
+  Embedding,
+} from "./types";
 
 function createAdapter(provider: string): ModelAdapter {
   switch (provider.toLowerCase()) {
@@ -64,31 +71,31 @@ export async function universalInfer({
   }
 }
 
-export async function generateWithImage({
+export async function universalEmbed({
   model,
-  prompt,
-  imagePath,
+  documents,
 }: {
   model: string;
-  prompt: string;
-  imagePath: string;
-}): Promise<string> {
-  const [provider, modelName] = model.split("/");
+  documents: Document[];
+}): Promise<Embedding[]> {
+  const modelParts = model.split("/");
 
-  if (provider.toLowerCase() !== "ollama") {
-    throw new Error("Image generation is only supported with Ollama models");
+  if (modelParts.length !== 2) {
+    throw new Error("Invalid model name");
   }
 
-  const adapter = createAdapter(provider) as OllamaAdapter;
+  const [provider, modelName] = modelParts;
+
+  const adapter = createAdapter(provider);
 
   try {
-    return await adapter.generateWithImage({
+    const result = await adapter.embed({
       model: modelName,
-      prompt,
-      imagePath,
+      documents,
     });
+    return result;
   } catch (error) {
-    console.error("Error during image generation:", error);
-    throw new Error("Failed to generate with image");
+    console.error("Error during embedding:", error);
+    throw new Error("Failed to perform embedding");
   }
 }
