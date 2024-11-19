@@ -51,8 +51,6 @@ Makima is a powerful, web-based Agent Framework designed for building and managi
    bun run index.ts
    ```
 
-For detailed setup instructions and configuration options, please refer to our [Installation Guide](docs/installation.md).
-
 ## Usage
 
 After starting the server, you can interact with the Makima API to create agents, manage threads, and integrate tools. Here's a basic example of creating a new agent:
@@ -70,19 +68,14 @@ curl --request POST \
   }'
 ```
 
-For more examples and detailed API documentation, check out our [API Reference](docs/api-reference.md).
+For more examples and detailed API documentation, check out our [API Reference](docs/api.md).
 
 ## Documentation
 
-- [Installation Guide](docs/installation.md)
-- [API Reference](docs/api-reference.md)
-- [Creating Agents](docs/creating-agents.md)
-- [Managing Threads](docs/managing-threads.md)
-- [Integrating Tools](docs/integrating-tools.md)
-
-## Contributing
-
-We welcome contributions to Makima! Please see our [Contributing Guide](CONTRIBUTING.md) for more details on how to get started.
+- [API Reference](docs/api.md)
+- [Creating Agents](docs/agent.md)
+- [Managing Threads](docs/thread.md)
+- [Integrating Tools](docs/tool.md)
 
 ## License
 
