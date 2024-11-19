@@ -7,9 +7,14 @@ import { swagger } from "@elysiajs/swagger";
 
 const app = new Elysia();
 
+app.get("/", () => {
+  return "Makima is alive";
+});
+
 app.use(
   swagger({
     autoDarkMode: true,
+    path: "/docs",
     scalarConfig: {
       customCss: `body {background:var(--scalar-background-2);}`,
     },
