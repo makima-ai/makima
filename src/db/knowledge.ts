@@ -1,18 +1,18 @@
 import { db } from "../db";
 import { eq } from "drizzle-orm";
-import { knowledgeStoresTable } from "./schema";
+import { knowledgeBaseTable } from "./schema";
 
-// KnowledgeStore CRUD operations
+// KnowledgeBase CRUD operations (This is only for database actions not to actually remove/add the vector stores on the provider side)
 
-export const createKnowledgeStore = async (knowledgeStore: {
+export const addKnowledgeBasetoDB = async (knowledgeStore: {
   name: string;
   embedding_model: string;
   database_provider: string;
-  description?: string;
+  description?: string | null;
 }) => {
   try {
     const [newKnowledgeStore] = await db
-      .insert(knowledgeStoresTable)
+      .insert(knowledgeBaseTable)
       .values(knowledgeStore)
       .returning();
     return newKnowledgeStore;
@@ -22,12 +22,12 @@ export const createKnowledgeStore = async (knowledgeStore: {
   }
 };
 
-export const getKnowledgeStoreById = async (id: string) => {
+export const getKnowledgeBaseById = async (id: string) => {
   try {
     const [knowledgeStore] = await db
       .select()
-      .from(knowledgeStoresTable)
-      .where(eq(knowledgeStoresTable.id, id));
+      .from(knowledgeBaseTable)
+      .where(eq(knowledgeBaseTable.id, id));
     return knowledgeStore || null;
   } catch (error) {
     console.error("Error getting knowledge store:", error);
@@ -35,12 +35,12 @@ export const getKnowledgeStoreById = async (id: string) => {
   }
 };
 
-export const getKnowledgeStoreByName = async (name: string) => {
+export const getKnowledgeBaseByName = async (name: string) => {
   try {
     const [knowledgeStore] = await db
       .select()
-      .from(knowledgeStoresTable)
-      .where(eq(knowledgeStoresTable.name, name));
+      .from(knowledgeBaseTable)
+      .where(eq(knowledgeBaseTable.name, name));
     return knowledgeStore || null;
   } catch (error) {
     console.error("Error getting knowledge store:", error);
@@ -48,15 +48,15 @@ export const getKnowledgeStoreByName = async (name: string) => {
   }
 };
 
-export const updateKnowledgeStore = async (
+export const updateKnowledgeBaseOnDB = async (
   name: string,
-  updates: Partial<typeof knowledgeStoresTable.$inferInsert>,
+  updates: Partial<typeof knowledgeBaseTable.$inferInsert>,
 ) => {
   try {
     const [updatedKnowledgeStore] = await db
-      .update(knowledgeStoresTable)
+      .update(knowledgeBaseTable)
       .set(updates)
-      .where(eq(knowledgeStoresTable.name, name))
+      .where(eq(knowledgeBaseTable.name, name))
       .returning();
     return updatedKnowledgeStore;
   } catch (error) {
@@ -65,11 +65,11 @@ export const updateKnowledgeStore = async (
   }
 };
 
-export const deleteKnowledgeStore = async (name: string) => {
+export const deleteKnowledgeBaseOnDB = async (name: string) => {
   try {
     const [deletedKnowledgeStore] = await db
-      .delete(knowledgeStoresTable)
-      .where(eq(knowledgeStoresTable.name, name))
+      .delete(knowledgeBaseTable)
+      .where(eq(knowledgeBaseTable.name, name))
       .returning();
     return deletedKnowledgeStore;
   } catch (error) {
@@ -78,15 +78,29 @@ export const deleteKnowledgeStore = async (name: string) => {
   }
 };
 
-export const listAllKnowledgeStores = async () => {
+export const listAllKnowledgeBases = async () => {
   try {
     const knowledgeStores = await db
       .select()
-      .from(knowledgeStoresTable)
+      .from(knowledgeBaseTable)
       .execute();
     return knowledgeStores;
   } catch (error) {
     console.error("Error listing knowledge stores:", error);
+    throw error;
+  }
+};
+
+export const updateEmbeddingModel = async (name: string, newModel: string) => {
+  try {
+    const [updatedKnowledgeStore] = await db
+      .update(knowledgeBaseTable)
+      .set({ embedding_model: newModel })
+      .where(eq(knowledgeBaseTable.name, name))
+      .returning();
+    return updatedKnowledgeStore;
+  } catch (error) {
+    console.error("Error updating embedding model:", error);
     throw error;
   }
 };

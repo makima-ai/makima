@@ -7,14 +7,9 @@ import type {
   ChatResponse,
   GenerateRequest,
 } from "ollama";
-import type {
-  Embedding,
-  Document,
-  Message,
-  ModelAdapter,
-  OutputMessage,
-  Tool,
-} from "../types";
+import type { Message, ModelAdapter, OutputMessage, Tool } from "../types";
+
+import type { Embedding, Document } from "../../knowledge/types";
 
 export class OllamaAdapter implements ModelAdapter {
   private ollama: Ollama;

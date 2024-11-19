@@ -1,5 +1,6 @@
 import type { ZodSchema, infer as InferZod } from "zod";
 import type { contextsTable, messagesTable } from "../../db/schema";
+import type { Embedding, Document } from "../knowledge/types";
 
 export type MessageContent = string | (ImageContent | AudioContent)[];
 
@@ -96,18 +97,6 @@ export type ToolProps<T extends ZodSchema> = {
   function: (params: InferParams<T>) => Promise<unknown>;
   parse?: (params: string) => object | string;
   errorParser?: (error: unknown) => string;
-};
-
-export type Document = {
-  id: string;
-  content: string;
-  model: string;
-  metadata?: Record<string, string>;
-};
-
-export type Embedding = {
-  model: string;
-  embeddings: number[][];
 };
 
 export interface ModelAdapter {

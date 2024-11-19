@@ -1,18 +1,15 @@
 import { env } from "../../env";
 import { OpenAIAdapter } from "./adapters/openai";
 import { OllamaAdapter } from "./adapters/ollama";
-import type {
-  Message,
-  Document,
-  ModelAdapter,
-  OutputMessage,
-  Tool,
-  Embedding,
-} from "./types";
+import type { Message, ModelAdapter, OutputMessage, Tool } from "./types";
+import type { Embedding, Document } from "../knowledge/types";
 
 function createAdapter(provider: string): ModelAdapter {
   switch (provider.toLowerCase()) {
     case "openai":
+      if (!env.OPENAI_API_KEY) {
+        throw new Error("OPENAI_API_KEY is required");
+      }
       const openAIConfig: ConstructorParameters<typeof OpenAIAdapter>[0] = {
         apiKey: env.OPENAI_API_KEY,
         baseURL: env.OPENAI_BASE_URL,

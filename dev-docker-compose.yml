@@ -9,3 +9,13 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     restart: always
+  pgvector:
+    image: ankane/pgvector
+    container_name: makima-pgvector
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_PASSWORD: 12345678
+    volumes:
+      - ./data/pgvector:/var/lib/postgresql/data
+    restart: always

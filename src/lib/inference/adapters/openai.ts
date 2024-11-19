@@ -1,7 +1,5 @@
 import OpenAI, { type ClientOptions } from "openai";
 import type {
-  Document,
-  Embedding,
   Message,
   MessageContent,
   ModelAdapter,
@@ -17,6 +15,7 @@ import type {
 import zodToJsonSchema from "zod-to-json-schema";
 import type { JSONSchema } from "openai/lib/jsonschema.mjs";
 import { z } from "zod";
+import type { Embedding, Document } from "../../knowledge/types";
 
 export class OpenAIAdapter implements ModelAdapter {
   private openai: OpenAI;

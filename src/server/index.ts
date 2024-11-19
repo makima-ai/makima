@@ -4,6 +4,7 @@ import { agentRoute, toolRoute } from "./routes/agent";
 import { env } from "../env";
 import serverTiming from "@elysiajs/server-timing";
 import { swagger } from "@elysiajs/swagger";
+import { knowledgeRoute } from "./routes/knowledge";
 
 const app = new Elysia();
 
@@ -47,6 +48,10 @@ app.use(
           name: "Tools",
           description: "APIs for managing tools",
         },
+        {
+          name: "Knowledge Base",
+          description: "APIs for managing Knowledge bases",
+        },
       ],
     },
   }),
@@ -55,6 +60,7 @@ app.use(
 app.use(threadRoute);
 app.use(agentRoute);
 app.use(toolRoute);
+app.use(knowledgeRoute);
 
 const port = env.PORT;
 

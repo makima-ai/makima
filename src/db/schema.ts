@@ -2,7 +2,7 @@ import { pgTable, text, jsonb, timestamp } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
 export const contextsTable = pgTable("contexts", {
-  id: text("id").primaryKey().notNull().unique(),
+  id: text("id").primaryKey(),
   platform: text("platform"),
   description: text("description"),
   default_agent_id: text("default_agent_id").references(() => agentsTable.id),
@@ -78,7 +78,7 @@ export const agentToolsRelations = relations(agentToolsTable, ({ one }) => ({
   }),
 }));
 
-export const knowledgeStoresTable = pgTable("knowledge_stores", {
+export const knowledgeBaseTable = pgTable("knowledge_bases", {
   id: text("id")
     .primaryKey()
     .notNull()
