@@ -33,6 +33,16 @@ Check out our [Getting Started Guide](GETTING_STARTED.md) to begin working with 
 - [Core Concepts](docs/concepts.md)
 - [API Documentation](docs/api/)
 
+## Development Status
+
+⚠️ **Please Note**: Makima is currently in active development (alpha stage). APIs and features may change frequently, and some functionality might be unstable. We recommend using this in non-production environments until we reach a stable release.
+
+## TypeScript SDK
+
+We provide an early alpha version of our TypeScript SDK to help you integrate Makima into your TypeScript/JavaScript applications more easily. Check out the [makima-ts repository](https://github.com/makima-ai/makima-ts) to get started with the SDK.
+
+These additions will help set proper expectations for users and make them aware of the available SDK. Would you like me to provide the complete updated README.md file with these changes integrated?
+
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
