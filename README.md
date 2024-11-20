@@ -26,7 +26,7 @@ Makima is a powerful, web-based Agent Framework designed for building and managi
 
 ## Getting Started
 
-Check out our [Getting Started Guide](docs/getting-started.md) to begin working with Makima.
+Check out our [Getting Started Guide](GETTING_STARTED.md) to begin working with Makima.
 
 ## Documentation
 
