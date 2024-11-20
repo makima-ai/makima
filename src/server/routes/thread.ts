@@ -12,23 +12,24 @@ import type { UserMessage } from "../../lib/inference/types";
 import { threadInfer } from "../../lib/thread";
 
 export const threadRoute = new Elysia({ prefix: "/thread" })
-  .get("/", async () => {
-    const threads = await listAllThreads();
-    return threads;
-  },
-  {
-    query: t.Object({
-      name: t.Optional(t.String()),
-    }),
-    detail: {
-      summary: "Get all threads",
-      description:
-        "Get all threads in the system.",
-      tags: ["Threads"],
+  .get(
+    "/",
+    async () => {
+      const threads = await listAllThreads();
+      return threads;
     },
-  },
-)
-  
+    {
+      query: t.Object({
+        name: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
+      }),
+      detail: {
+        summary: "Get all threads",
+        description: "Get all threads in the system.",
+        tags: ["Threads"],
+      },
+    },
+  )
+
   // Get thread details by ID
   .get(
     "/:id",
@@ -41,12 +42,11 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        id: t.String({ minLength: 4, maxLength: 255 }),
       }),
       detail: {
         summary: "Get threads by ID",
-        description:
-          "Gets the details of a thread by its ID.",
+        description: "Gets the details of a thread by its ID.",
         tags: ["Threads"],
       },
     },
@@ -60,12 +60,11 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        id: t.String({ minLength: 4, maxLength: 255 }),
       }),
       detail: {
         summary: "Get messages by thread ID",
-        description:
-          "Gets all messages of a thread by its Thread ID.",
+        description: "Gets all messages of a thread by its Thread ID.",
         tags: ["Threads"],
       },
     },
@@ -86,11 +85,13 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
     },
     {
       body: t.Object({
-        id: t.String(),
-        platform: t.String(),
-        description: t.Optional(t.String()),
-        authors: t.Optional(t.Array(t.String())),
-        agentName: t.String(),
+        id: t.String({ minLength: 4, maxLength: 255 }),
+        platform: t.String({ minLength: 4, maxLength: 255 }),
+        description: t.Optional(t.String({ maxLength: 255 })),
+        authors: t.Optional(
+          t.Array(t.String({ minLength: 4, maxLength: 255 })),
+        ),
+        agentName: t.String({ minLength: 4, maxLength: 255 }),
       }),
       detail: {
         summary: "Create a new thread",
@@ -99,13 +100,13 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
         tags: ["Threads"],
       },
     },
-    
   )
   // Add a message to a thread
   .post(
     "/:id/message",
     async ({ params: { id }, body }) => {
-      const { role, content, authorId } = body;
+      const { content, authorId } = body;
+      const role = "human";
       if (!role || !content || !authorId) {
         return { error: "Invalid input data" };
       }
@@ -118,14 +119,14 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        id: t.String({ minLength: 4, maxLength: 255 }),
       }),
       body: t.Object({
-        callId: t.Optional(t.String()),
-        role: t.Union([t.Literal("human")]),
-        name: t.String(),
-        content: t.String(),
-        authorId: t.String(),
+        callId: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
+        // role: t.Union([t.Literal("human")]),
+        name: t.String({ minLength: 4, maxLength: 255 }),
+        content: t.String({ minLength: 1 }),
+        authorId: t.String({ minLength: 4, maxLength: 255 }),
       }),
       detail: {
         summary: "Add a message to a thread",
@@ -149,32 +150,37 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        id: t.String({ minLength: 4, maxLength: 255 }),
       }),
       body: t.Object({
-        agentName: t.Optional(t.String()),
+        agentName: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
         message: t.Object({
-          role: t.Literal("human"),
-          name: t.String(),
-          content: t.Union([
-            t.String(),
-            t.Array(
-              t.Object({
-                url: t.String(),
-                type: t.Union([t.Literal("image"), t.Literal("audio")]),
-                detail: t.Optional(
-                  t.Union([
-                    t.Literal("auto"),
-                    t.Literal("low"),
-                    t.Literal("high"),
-                  ]),
-                ),
-                format: t.Optional(
-                  t.Union([t.Literal("wav"), t.Literal("mp3")]),
-                ),
-              }),
-            ),
-          ]),
+          role: t.Literal("human", { default: "human" }),
+          name: t.String({ minLength: 4, maxLength: 255 }),
+          content: t.Union(
+            [
+              t.String({ minLength: 1 }),
+              t.Array(
+                t.Object({
+                  url: t.String({ minLength: 1 }),
+                  type: t.Union([t.Literal("image"), t.Literal("audio")]),
+                  detail: t.Optional(
+                    t.Union([
+                      t.Literal("auto"),
+                      t.Literal("low"),
+                      t.Literal("high"),
+                    ]),
+                  ),
+                  format: t.Optional(
+                    t.Union([t.Literal("wav"), t.Literal("mp3")]),
+                  ),
+                }),
+              ),
+            ],
+            {
+              default: "",
+            },
+          ),
           attachments: t.Optional(
             t.Array(
               t.Object({
@@ -208,7 +214,7 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        id: t.String({ minLength: 4, maxLength: 255 }),
       }),
       detail: {
         summary: "Delete a thread",
@@ -216,7 +222,7 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
           "Deletes a thread by its ID along with all the messages associated with it and returns the deleted messages count.",
         tags: ["Threads"],
       },
-   }
+    },
   )
   // Update thread's default agent
   .put(
@@ -231,10 +237,10 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        id: t.String({ minLength: 4, maxLength: 255 }),
       }),
       body: t.Object({
-        agentName: t.String(),
+        agentName: t.String({ minLength: 4, maxLength: 255 }),
       }),
       detail: {
         summary: "Update thread's default agent",

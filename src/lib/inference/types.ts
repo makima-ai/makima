@@ -117,8 +117,5 @@ export interface ModelAdapter {
     signal?: AbortSignal;
     onMessage?: (message: Message) => void;
   }): Promise<OutputMessage>;
-  embed(params: {
-    documents: Omit<Document, "id">[];
-    model: string;
-  }): Promise<Embedding[]>;
+  embed(params: { documents: Document[]; model: string }): Promise<Embedding[]>;
 }

@@ -29,7 +29,7 @@ app.use(
       ],
       info: {
         title: "Makima",
-        version: `1.0`,
+        version: `1.0.0-alpha.1`,
         contact: {
           name: "makima",
           email: "makima@raj.how",

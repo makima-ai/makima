@@ -1,15 +1,5 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import {
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-  jsonb,
-  varchar,
-} from "drizzle-orm/pg-core";
-import { Pool } from "pg";
-import { sql, cosineDistance, desc, gt, and, eq } from "drizzle-orm";
-import { vector } from "drizzle-orm/pg-core";
+import { Pool, type QueryResult } from "pg";
+import pgvector from "pgvector/pg";
 import type {
   KnowledgeBase,
   KnowledgeProviderAdapter,
@@ -19,8 +9,23 @@ import type {
 import { universalEmbed } from "../../inference";
 import { getKnowledgeBaseModels } from "..";
 
+interface QueryResultRow {
+  [key: string]: unknown;
+}
+
+interface DocumentRow extends QueryResultRow {
+  id: string;
+  content: string;
+  model: string;
+  metadata: Record<string, unknown>;
+}
+
+interface SearchResultRow extends DocumentRow {
+  similarity: number;
+}
+
 export class PGVectorAdapter implements KnowledgeProviderAdapter {
-  private db: ReturnType<typeof drizzle>;
+  private pool: Pool;
   model: string;
   private tableName: string;
   private embeddingSizes: Record<string, number> = {};
@@ -29,11 +34,15 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
   constructor(kb: KnowledgeBase & { connectionURI: string }) {
     this.kb = kb;
     this.model = kb.embedding_model;
-    const pool = new Pool({
+    this.pool = new Pool({
       connectionString: kb.connectionURI,
     });
-    this.db = drizzle(pool);
     this.tableName = `kb_${kb.name.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
+
+    // Register pgvector types for each connection
+    this.pool.on("connect", async (client) => {
+      await pgvector.registerTypes(client);
+    });
   }
 
   private normalizeModelName(model: string): string {
@@ -42,7 +51,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
 
   async initialize(): Promise<void> {
     console.log("Initializing PGVectorAdapter...");
-    await this.db.execute(sql`CREATE EXTENSION IF NOT EXISTS vector`);
+    await this.executeQuery("CREATE EXTENSION IF NOT EXISTS vector");
     console.log("Vector extension ensured.");
     await this.createOrUpdateTable();
     console.log("Table creation or update completed.");
@@ -63,13 +72,16 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
 
   private async checkIfTableExists(): Promise<boolean> {
     console.log("checking", this.tableName);
-    const result = await this.db.execute(sql`
+    const result = await this.executeQuery<{ exists: boolean }>(
+      `
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
-        WHERE table_name = ${this.tableName}
+        WHERE table_name = $1
       );
-    `);
-    return !!result.rows[0].exists;
+    `,
+      [this.tableName],
+    );
+    return result.rows[0].exists;
   }
 
   private async createTable(models: string[]): Promise<void> {
@@ -91,9 +103,9 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
 
     const allColumns = [baseColumns, ...embeddingColumns].join(", ");
 
-    await this.db.execute(sql`
-      CREATE TABLE ${sql.raw(this.tableName)} (
-        ${sql.raw(allColumns)}
+    await this.executeQuery(`
+      CREATE TABLE ${this.tableName} (
+        ${allColumns}
       )
     `);
   }
@@ -105,21 +117,24 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
       const normalizedModel = this.normalizeModelName(model);
       if (!existingColumns.includes(`embedding_${normalizedModel}`)) {
         const embeddingSize = await this.getEmbeddingSize(model);
-        await this.db.execute(sql`
-          ALTER TABLE ${sql.raw(this.tableName)}
-          ADD COLUMN ${sql.raw(`embedding_${normalizedModel}`)} vector(${sql.raw(embeddingSize.toString())})
+        await this.executeQuery(`
+          ALTER TABLE ${this.tableName}
+          ADD COLUMN embedding_${normalizedModel} vector(${embeddingSize})
         `);
       }
     }
   }
 
   private async getExistingColumns(): Promise<string[]> {
-    const result = await this.db.execute(sql`
+    const result = await this.executeQuery<{ column_name: string }>(
+      `
       SELECT column_name
       FROM information_schema.columns
-      WHERE table_name = ${this.tableName}
-    `);
-    return result.rows.map((row: any) => row.column_name);
+      WHERE table_name = $1
+    `,
+      [this.tableName],
+    );
+    return result.rows.map((row) => row.column_name);
   }
 
   private async getEmbeddingSize(model: string): Promise<number> {
@@ -138,22 +153,64 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
     return this.embeddingSizes[model];
   }
 
-  private getDocumentsTable() {
-    const columns: Record<string, any> = {
-      id: uuid("id").primaryKey(),
-      content: text("content").notNull(),
-      metadata: jsonb("metadata"),
-      model: varchar("model", { length: 255 }).notNull(),
-      createdAt: timestamp("created_at").defaultNow(),
-    };
+  async addDocument(document: Document): Promise<{ id: string }> {
+    const model = document.model || this.model;
+    console.debug("Adding document with model:", model);
+    const [embedding] = await universalEmbed({
+      model: model,
+      documents: [{ content: document.content, model: model }],
+    });
+    console.debug("Generated embedding:", embedding.embeddings[0].slice(0, 5));
 
-    for (const model of Object.keys(this.embeddingSizes)) {
-      columns[`embedding_${model}`] = vector(`embedding_${model}`, {
-        dimensions: this.embeddingSizes[model],
-      });
-    }
+    const column_name = `embedding_${this.normalizeModelName(model)}`;
+    console.log("Column name:", column_name);
 
-    return pgTable(this.tableName, columns);
+    const result = await this.executeQuery<{ id: string }>(
+      `
+      INSERT INTO ${this.tableName} (content, ${column_name}, metadata, model)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id
+    `,
+      [
+        document.content,
+        pgvector.toSql(embedding.embeddings[0]),
+        document.metadata,
+        model,
+      ],
+    );
+
+    console.debug("Document added with ID:", result.rows[0].id);
+    return { id: result.rows[0].id };
+  }
+
+  async updateDocument(
+    document: Partial<Document> & { id: string },
+  ): Promise<{ id: string }> {
+    const model = document.model || this.model;
+    const [embedding] = await universalEmbed({
+      model: model,
+      documents: [{ content: document.content!, model: model }],
+    });
+
+    const column_name = `embedding_${this.normalizeModelName(model)}`;
+
+    const result = await this.executeQuery<{ id: string }>(
+      `
+      UPDATE ${this.tableName}
+      SET content = $1, ${column_name} = $2, metadata = $3, model = $4
+      WHERE id = $5
+      RETURNING id
+    `,
+      [
+        document.content,
+        pgvector.toSql(embedding.embeddings[0]),
+        document.metadata,
+        model,
+        document.id,
+      ],
+    );
+
+    return { id: result.rows[0].id };
   }
 
   async search(
@@ -161,121 +218,85 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
     k: number,
     modelFilter?: string,
   ): Promise<SearchResult[]> {
-    const documentsTable = this.getDocumentsTable();
     const searchModel = modelFilter || this.model;
+    console.debug("Search model:", searchModel);
     const [queryEmbedding] = await universalEmbed({
       model: searchModel,
-      documents: [{ content: query, id: "query", model: searchModel }],
+      documents: [{ content: query, model: searchModel }],
     });
+    console.debug("Query embedding:", queryEmbedding.embeddings[0].slice(0, 5));
 
-    const embeddingColumn = sql.raw(`embedding_${searchModel}`);
-    const similarity = sql<number>`1 - (${cosineDistance(embeddingColumn, queryEmbedding.embeddings[0])})`;
+    const embeddingColumn = `embedding_${this.normalizeModelName(searchModel)}`;
+    const result = await this.executeQuery<SearchResultRow>(
+      `
+      SELECT id, content, model, metadata, 
+        1 - (${embeddingColumn} <=> $1) as similarity
+      FROM ${this.tableName}
+      WHERE model = $2 AND 1 - (${embeddingColumn} <=> $1) > 0.1
+      ORDER BY ${embeddingColumn} <-> $1
+      LIMIT $3
+    `,
+      [pgvector.toSql(queryEmbedding.embeddings[0]), searchModel, k],
+    );
 
-    let baseQuery = this.db
-      .select({
-        id: documentsTable.id,
-        content: documentsTable.content,
-        model: documentsTable.model,
-        metadata: documentsTable.metadata,
-        similarity: similarity,
-      })
-      .from(documentsTable)
-      .where(and(eq(documentsTable.model, searchModel), gt(similarity, 0.1)))
-      .orderBy(desc(similarity))
-      .limit(k);
+    console.debug("Search results:", result.rows);
 
-    const results = await baseQuery;
-
-    return results.map((row) => ({
+    return result.rows.map((row) => ({
       id: row.id,
       content: row.content,
       model: row.model,
-      metadata: row.metadata as Record<string, unknown> | undefined,
+      metadata: row.metadata,
       similarity: row.similarity,
     }));
   }
 
-  async addDocument(document: Document): Promise<{ id: string }> {
-    const model = document.model || this.model;
-    const [embedding] = await universalEmbed({
-      model: model,
-      documents: [
-        {
-          content: document.content,
-          model: model,
-        },
-      ],
-    });
-
-    const documentsTable = this.getDocumentsTable();
-
-    const [result] = await this.db
-      .insert(documentsTable)
-      .values({
-        content: document.content,
-        [`embedding_${model}`]: embedding.embeddings[0],
-        metadata: document.metadata,
-        model: model,
-      })
-      .returning({ id: documentsTable.id });
-
-    return { id: result.id };
-  }
-
-  async updateDocument(document: Document): Promise<{ id: string }> {
-    const model = document.model;
-    const [embedding] = await universalEmbed({
-      model: model,
-      documents: [document],
-    });
-
-    const documentsTable = this.getDocumentsTable();
-
-    const [result] = await this.db
-      .update(documentsTable)
-      .set({
-        content: document.content,
-        [`embedding_${model}`]: embedding.embeddings[0],
-        metadata: document.metadata,
-        model: model,
-      })
-      .where(eq(documentsTable.id, document.id))
-      .returning({ id: documentsTable.id });
-
-    return { id: result.id };
-  }
-
   async removeDocument(documentId: string): Promise<void> {
-    const documentsTable = this.getDocumentsTable();
-    await this.db
-      .delete(documentsTable)
-      .where(eq(documentsTable.id, documentId));
+    await this.executeQuery(
+      `
+      DELETE FROM ${this.tableName}
+      WHERE id = $1
+    `,
+      [documentId],
+    );
   }
 
   async getDocuments(filter: Record<string, string>): Promise<Document[]> {
-    const documentsTable = this.getDocumentsTable();
+    const conditions = Object.entries(filter)
+      .map(([key], index) => `metadata->>'${key}' = $${index + 1}`)
+      .join(" AND ");
 
-    const whereClause = Object.entries(filter).reduce(
-      (acc, [key, value]) => {
-        return sql`${acc} AND ${documentsTable.metadata}->>${key} = ${value}`;
-      },
-      sql`TRUE`,
+    const query = `
+      SELECT id, content, model, metadata
+      FROM ${this.tableName}
+      ${conditions ? `WHERE ${conditions}` : ""}
+    `;
+
+    const result = await this.executeQuery<DocumentRow>(
+      query,
+      Object.values(filter),
     );
 
-    const results = await this.db
-      .select()
-      .from(documentsTable)
-      .where(whereClause);
-
-    return results.map((row) => ({
+    return result.rows.map((row) => ({
       id: row.id,
       content: row.content,
       model: row.model,
-      metadata: row.metadata as Record<string, unknown> | undefined,
+      metadata: row.metadata,
     }));
   }
 
   async delete(): Promise<void> {
-    await this.db.execute(sql`DROP TABLE IF EXISTS ${sql.raw(this.tableName)}`);
+    await this.executeQuery(`DROP TABLE IF EXISTS ${this.tableName}`);
+  }
+
+  private async executeQuery<T extends QueryResultRow>(
+    query: string,
+    params: any[] = [],
+  ): Promise<QueryResult<T>> {
+    const client = await this.pool.connect();
+    try {
+      return await client.query<T>(query, params);
+    } finally {
+      client.release();
+    }
   }
 }

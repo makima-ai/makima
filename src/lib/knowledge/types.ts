@@ -1,5 +1,4 @@
 export type Document = {
-  // id: string;
   content: string;
   model?: string;
   metadata?: Record<string, unknown>;
@@ -29,9 +28,7 @@ export type SearchResult = {
 export interface KnowledgeProviderAdapter {
   model: string;
   initialize(): Promise<void>;
-  addDocument(
-    document: Omit<Document, "id" | "model"> & { model?: string },
-  ): Promise<{ id: string }>;
+  addDocument(document: Document): Promise<{ id: string }>;
   updateDocument(
     document: Partial<Document> & { id: string },
   ): Promise<{ id: string }>;

@@ -41,7 +41,7 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
     },
     {
       params: t.Object({
-        name: t.String(),
+        name: t.String({ minLength: 4, maxLength: 255 }),
       }),
       detail: {
         summary: "Get knowledge base by name",
@@ -58,9 +58,9 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
     },
     {
       body: t.Object({
-        name: t.String(),
-        description: t.Optional(t.String()),
-        embedding_model: t.String(),
+        name: t.String({ minLength: 4, maxLength: 255 }),
+        description: t.Optional(t.String({ maxLength: 255 })),
+        embedding_model: t.String({ minLength: 4, maxLength: 255 }),
         database_provider: t.String(),
       }),
       detail: {
@@ -82,12 +82,12 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
     },
     {
       params: t.Object({
-        name: t.String(),
+        name: t.String({ minLength: 4, maxLength: 255 }),
       }),
       body: t.Object({
-        content: t.String(),
+        content: t.String({ minLength: 1 }),
         metadata: t.Optional(t.Record(t.String(), t.Any())),
-        model: t.Optional(t.String()),
+        model: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
       }),
       detail: {
         summary: "Add document to knowledge base",
@@ -108,11 +108,11 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
     },
     {
       params: t.Object({
-        name: t.String(),
+        name: t.String({ minLength: 4, maxLength: 255 }),
       }),
       body: t.Object({
-        id: t.String(),
-        content: t.Optional(t.String()),
+        id: t.String({ minLength: 1 }),
+        content: t.Optional(t.String({ minLength: 1 })),
         metadata: t.Optional(t.Record(t.String(), t.Any())),
       }),
       detail: {
@@ -135,8 +135,8 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
     },
     {
       params: t.Object({
-        name: t.String(),
-        documentId: t.String(),
+        name: t.String({ minLength: 4, maxLength: 255 }),
+        documentId: t.String({ minLength: 1 }),
       }),
       detail: {
         summary: "Remove document from knowledge base",
@@ -160,7 +160,7 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
     },
     {
       params: t.Object({
-        name: t.String(),
+        name: t.String({ minLength: 4, maxLength: 255 }),
       }),
       query: t.Object({}),
       detail: {
@@ -183,7 +183,7 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
     },
     {
       params: t.Object({
-        name: t.String(),
+        name: t.String({ minLength: 4, maxLength: 255 }),
       }),
       detail: {
         summary: "Delete knowledge base",
@@ -205,11 +205,11 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
     },
     {
       params: t.Object({
-        name: t.String(),
+        name: t.String({ minLength: 4, maxLength: 255 }),
       }),
       body: t.Object({
-        embedding_model: t.Optional(t.String()),
-        description: t.Optional(t.String()),
+        embedding_model: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
+        description: t.Optional(t.String({ maxLength: 255 })),
       }),
       detail: {
         summary: "Update knowledge base",
@@ -232,12 +232,12 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
     },
     {
       params: t.Object({
-        name: t.String(),
+        name: t.String({ minLength: 4, maxLength: 255 }),
       }),
       query: t.Object({
-        q: t.String(),
-        k: t.String(),
-        model: t.Optional(t.String()),
+        q: t.String({ minLength: 1 }),
+        k: t.String({ pattern: "^[0-9]+$" }),
+        model: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
       }),
       detail: {
         summary: "Search knowledge base",
