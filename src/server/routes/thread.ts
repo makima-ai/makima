@@ -19,9 +19,6 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       return threads;
     },
     {
-      query: t.Object({
-        name: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
-      }),
       detail: {
         summary: "Get all threads",
         description: "Get all threads in the system.",
