@@ -24,7 +24,7 @@ app.use(
     documentation: {
       servers: [
         {
-          url: "http://localhost:7777",
+          url: env.SWAGGER_SERVER_URL,
         },
       ],
       info: {

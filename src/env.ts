@@ -7,6 +7,7 @@ const envSchema = z.object({
   OLLAMA_HOST: z.string().url().default("http://127.0.0.1:11434"),
   PGVECTOR_URL: z.string().url().optional(),
   DATABASE_URL: z.string().url(),
+  SWAGGER_SERVER_URL: z.string().url().default("http://localhost:7777"),
   PORT: z.string().default("7777"),
   BETTER_AUTH_SECRET: z.string(),
   BETTER_AUTH_URL: z.string().url(),
