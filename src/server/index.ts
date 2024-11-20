@@ -9,9 +9,19 @@ import { knowledgeRoute } from "./routes/knowledge";
 const app = new Elysia();
 
 app.use(serverTiming());
-app.get("/", () => {
-  return "Makima is alive";
-});
+app.get(
+  "/",
+  () => {
+    return "Makima is alive";
+  },
+  {
+    detail: {
+      summary: "Health check",
+      description: "Check if the server is alive",
+      tags: ["Service"],
+    },
+  },
+);
 
 app.use(
   swagger({
@@ -37,20 +47,24 @@ app.use(
       },
       tags: [
         {
-          name: "Threads",
-          description: "APIs for managing threads",
+          name: "Knowledge Base",
+          description: "APIs for managing Knowledge bases",
         },
         {
           name: "Agents",
           description: "APIs for managing agents",
         },
         {
+          name: "Threads",
+          description: "APIs for managing threads",
+        },
+        {
           name: "Tools",
           description: "APIs for managing tools",
         },
         {
-          name: "Knowledge Base",
-          description: "APIs for managing Knowledge bases",
+          name: "Service",
+          description: "Service health check and stats",
         },
       ],
     },
