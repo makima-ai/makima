@@ -6,7 +6,7 @@ export const contextsTable = pgTable("contexts", {
   platform: text("platform"),
   description: text("description"),
   default_agent_id: text("default_agent_id").references(() => agentsTable.id),
-  authors: jsonb("authors"),
+  authors: jsonb("authors").$type<string[]>(),
 });
 
 export const messagesTable = pgTable("messages", {
@@ -85,7 +85,8 @@ export const knowledgeBaseTable = pgTable("knowledge_bases", {
     .default(sql`gen_random_uuid()`),
   name: text("name").unique().notNull(),
   embedding_model: text("embedding_model").notNull(),
+  models: jsonb("models").$type<string[]>(),
   database_provider: text("database_provider").notNull(),
   description: text("description"),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });

@@ -88,6 +88,7 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
         id: t.String(),
         content: t.String(),
         metadata: t.Optional(t.Record(t.String(), t.Any())),
+        model: t.Optional(t.String()),
       }),
       detail: {
         summary: "Add document to knowledge base",
@@ -112,7 +113,7 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
       }),
       body: t.Object({
         id: t.String(),
-        content: t.String(),
+        content: t.Optional(t.String()),
         metadata: t.Optional(t.Record(t.String(), t.Any())),
       }),
       detail: {

@@ -1,15 +1,11 @@
 import { db } from "../db";
 import { eq } from "drizzle-orm";
 import { knowledgeBaseTable } from "./schema";
+import type { KnowledgeBase } from "../lib/knowledge/types";
 
 // KnowledgeBase CRUD operations (This is only for database actions not to actually remove/add the vector stores on the provider side)
 
-export const addKnowledgeBasetoDB = async (knowledgeStore: {
-  name: string;
-  embedding_model: string;
-  database_provider: string;
-  description?: string | null;
-}) => {
+export const addKnowledgeBasetoDB = async (knowledgeStore: KnowledgeBase) => {
   try {
     const [newKnowledgeStore] = await db
       .insert(knowledgeBaseTable)

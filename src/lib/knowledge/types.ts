@@ -10,6 +10,7 @@ export type KnowledgeBase = {
   description?: string | null;
   embedding_model: string;
   database_provider: string;
+  models?: string[] | null;
 };
 
 export type Embedding = {
@@ -28,8 +29,12 @@ export type SearchResult = {
 export interface KnowledgeProviderAdapter {
   model: string;
   initialize(): Promise<void>;
-  addDocument(document: Document): Promise<{ id: string }>;
-  updateDocument(document: Document): Promise<{ id: string }>;
+  addDocument(
+    document: Omit<Document, "model"> & { model?: string },
+  ): Promise<{ id: string }>;
+  updateDocument(
+    document: Partial<Document> & { id: string },
+  ): Promise<{ id: string }>;
   removeDocument(documentId: string): Promise<void>;
   getDocuments(filter: Record<string, string>): Promise<Document[]>;
   delete(): Promise<void>;

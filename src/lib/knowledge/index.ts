@@ -3,7 +3,6 @@ import {
   getKnowledgeBaseByName,
   deleteKnowledgeBaseOnDB,
   updateKnowledgeBaseOnDB,
-  updateEmbeddingModel,
 } from "../../db/knowledge";
 import { env } from "../../env";
 import { PGVectorAdapter } from "./adapter/pgvector";
@@ -32,10 +31,25 @@ function createKnowledgeBaseProviderAdapter(
   }
 }
 
+export async function getKnowledgeBaseModels(
+  knowledgeBaseName: string,
+): Promise<string[]> {
+  const kb = await getKnowledgeBaseByName(knowledgeBaseName);
+  if (!kb) {
+    throw new Error(`Knowledge base ${knowledgeBaseName} not found`);
+  }
+  return kb.models || [kb.embedding_model];
+}
+
 export async function createKnowledgeBase(kb: KnowledgeBase) {
   const adapter = createKnowledgeBaseProviderAdapter(kb);
+  console.log("Initializing knowledge base", kb);
   await adapter.initialize();
-  const data = await addKnowledgeBasetoDB(kb);
+  console.log("Knowledge base initialized", kb);
+  const data = await addKnowledgeBasetoDB({
+    ...kb,
+    models: [kb.embedding_model],
+  });
   return {
     id: data.id,
   };
@@ -64,21 +78,15 @@ export async function updateKnowledgeBase(
   }
 
   if (updates.embedding_model) {
-    await updateEmbeddingModel(knowledgeBaseName, updates.embedding_model);
+    updates.embedding_model = updates.embedding_model;
   }
 
-  if (updates.description) {
-    await updateKnowledgeBaseOnDB(knowledgeBaseName, {
-      description: updates.description,
-    });
-  }
-
-  const updatedKb = await getKnowledgeBaseByName(knowledgeBaseName);
+  const updatedKb = await updateKnowledgeBaseOnDB(knowledgeBaseName, updates);
   return updatedKb;
 }
 
 export async function addDocumentToKnowledgeBase(
-  document: Omit<Document, "model">,
+  document: Omit<Document, "model"> & { model?: string },
   knowledgeBaseName: string,
 ) {
   const kb = await getKnowledgeBaseByName(knowledgeBaseName);
@@ -86,14 +94,21 @@ export async function addDocumentToKnowledgeBase(
     throw new Error(`Knowledge base ${knowledgeBaseName} not found`);
   }
   const adapter = createKnowledgeBaseProviderAdapter(kb);
-  return adapter.addDocument({
-    ...document,
-    model: kb.embedding_model,
-  });
+  const result = await adapter.addDocument(document);
+
+  const normalizedModel = document.model || kb.embedding_model;
+  const existingModels = await getKnowledgeBaseModels(knowledgeBaseName);
+
+  if (!existingModels.includes(normalizedModel)) {
+    const updatedModels = [...existingModels, normalizedModel];
+    await updateKnowledgeBaseOnDB(knowledgeBaseName, { models: updatedModels });
+  }
+
+  return result;
 }
 
 export async function updateDocumentInKnowledgeBase(
-  document: Omit<Document, "model">,
+  document: Partial<Document> & { id: string },
   knowledgeBaseName: string,
 ) {
   const kb = await getKnowledgeBaseByName(knowledgeBaseName);
@@ -101,10 +116,17 @@ export async function updateDocumentInKnowledgeBase(
     throw new Error(`Knowledge base ${knowledgeBaseName} not found`);
   }
   const adapter = createKnowledgeBaseProviderAdapter(kb);
-  return adapter.updateDocument({
-    ...document,
-    model: kb.embedding_model,
-  });
+  const result = await adapter.updateDocument(document);
+
+  const normalizedModel = document.model || kb.embedding_model;
+  const existingModels = await getKnowledgeBaseModels(knowledgeBaseName);
+
+  if (!existingModels.includes(normalizedModel)) {
+    const updatedModels = [...existingModels, normalizedModel];
+    await updateKnowledgeBaseOnDB(knowledgeBaseName, { models: updatedModels });
+  }
+
+  return result;
 }
 
 export async function removeDocumentFromKnowledgeBase(
