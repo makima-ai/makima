@@ -85,7 +85,6 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
         name: t.String(),
       }),
       body: t.Object({
-        id: t.String(),
         content: t.String(),
         metadata: t.Optional(t.Record(t.String(), t.Any())),
         model: t.Optional(t.String()),

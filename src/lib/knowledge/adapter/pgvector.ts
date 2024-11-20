@@ -74,7 +74,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
 
   private async createTable(models: string[]): Promise<void> {
     const baseColumns = `
-      id UUID PRIMARY KEY,
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       content TEXT NOT NULL,
       metadata JSONB,
       model TEXT NOT NULL,
@@ -196,10 +196,15 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
   }
 
   async addDocument(document: Document): Promise<{ id: string }> {
-    const model = document.model;
+    const model = document.model || this.model;
     const [embedding] = await universalEmbed({
       model: model,
-      documents: [document],
+      documents: [
+        {
+          content: document.content,
+          model: model,
+        },
+      ],
     });
 
     const documentsTable = this.getDocumentsTable();
@@ -207,7 +212,6 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
     const [result] = await this.db
       .insert(documentsTable)
       .values({
-        id: document.id,
         content: document.content,
         [`embedding_${model}`]: embedding.embeddings[0],
         metadata: document.metadata,

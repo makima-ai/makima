@@ -43,9 +43,7 @@ export async function getKnowledgeBaseModels(
 
 export async function createKnowledgeBase(kb: KnowledgeBase) {
   const adapter = createKnowledgeBaseProviderAdapter(kb);
-  console.log("Initializing knowledge base", kb);
   await adapter.initialize();
-  console.log("Knowledge base initialized", kb);
   const data = await addKnowledgeBasetoDB({
     ...kb,
     models: [kb.embedding_model],
@@ -86,21 +84,24 @@ export async function updateKnowledgeBase(
 }
 
 export async function addDocumentToKnowledgeBase(
-  document: Omit<Document, "model"> & { model?: string },
+  document: Document,
   knowledgeBaseName: string,
 ) {
   const kb = await getKnowledgeBaseByName(knowledgeBaseName);
   if (!kb) {
     throw new Error(`Knowledge base ${knowledgeBaseName} not found`);
   }
+
   const adapter = createKnowledgeBaseProviderAdapter(kb);
+
   const result = await adapter.addDocument(document);
 
-  const normalizedModel = document.model || kb.embedding_model;
+  const model = document.model || kb.embedding_model;
+
   const existingModels = await getKnowledgeBaseModels(knowledgeBaseName);
 
-  if (!existingModels.includes(normalizedModel)) {
-    const updatedModels = [...existingModels, normalizedModel];
+  if (!existingModels.includes(model)) {
+    const updatedModels = [...existingModels, model];
     await updateKnowledgeBaseOnDB(knowledgeBaseName, { models: updatedModels });
   }
 

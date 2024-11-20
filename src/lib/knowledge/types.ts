@@ -1,7 +1,7 @@
 export type Document = {
-  id: string;
+  // id: string;
   content: string;
-  model: string;
+  model?: string;
   metadata?: Record<string, unknown>;
 };
 
@@ -30,7 +30,7 @@ export interface KnowledgeProviderAdapter {
   model: string;
   initialize(): Promise<void>;
   addDocument(
-    document: Omit<Document, "model"> & { model?: string },
+    document: Omit<Document, "id" | "model"> & { model?: string },
   ): Promise<{ id: string }>;
   updateDocument(
     document: Partial<Document> & { id: string },
