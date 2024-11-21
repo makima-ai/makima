@@ -11,7 +11,7 @@ export const DatabaseDocument = t.Object({
   content: t.String(),
   model: t.String(),
   metadata: t.Record(t.String(), t.Any()),
-  createdAt: t.Date(),
+  createdAt: t.Optional(t.Date()),
 });
 
 export type KnowledgeBase = {
