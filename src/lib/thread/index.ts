@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getAgentById, getAgentTools } from "../../db/agent";
+import { getAgentById, getAgentByName, getAgentTools } from "../../db/agent";
 import {
   getThreadDetailsById,
   getMessagesByThreadId,
@@ -32,7 +32,7 @@ export async function threadInfer({
 
     let agent;
     if (agentName) {
-      agent = await getAgentById(agentName);
+      agent = await getAgentByName(agentName);
       if (!agent) {
         throw new Error(`Agent "${agentName}" not found`);
       }
@@ -96,7 +96,7 @@ const paramsSchema = z.object({
   k: z.number().describe("Top k number of results to return"),
 });
 
-function knowledgeBaseTool(kb: KnowledgeBase): Tool<z.ZodObject<any>> {
+export function knowledgeBaseTool(kb: KnowledgeBase): Tool<z.ZodObject<any>> {
   const tool = new Tool({
     name: `search-knowledge-base-${kb.name}`,
     params: paramsSchema,

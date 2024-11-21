@@ -18,6 +18,8 @@ import {
   removeKnowledgeBaseFromAgentByName,
 } from "../../db/agent-knowledge";
 import { getKnowledgeBaseByName } from "../../db/knowledge";
+import { agentInfer } from "../../lib/thread/agent";
+import type { UserMessage } from "../../lib/inference/types";
 
 export const agentRoute = new Elysia({ prefix: "/agent" })
   .get(
@@ -138,6 +140,66 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
     },
   )
 
+  // Agent inference (temporary chat)
+  .post(
+    "/:agentName/chat",
+    async ({ params: { agentName }, body }) => {
+      const message = body;
+      const result = await agentInfer({
+        agentName,
+        newMessage: message as UserMessage,
+      });
+      return result;
+    },
+    {
+      params: t.Object({
+        agentName: t.String({ minLength: 3, maxLength: 255 }),
+      }),
+      body: t.Object({
+        role: t.Literal("human", { default: "human" }),
+        name: t.String({ minLength: 3, maxLength: 255 }),
+        content: t.Union(
+          [
+            t.String({ minLength: 1 }),
+            t.Array(
+              t.Object({
+                url: t.String({ minLength: 1 }),
+                type: t.Union([t.Literal("image"), t.Literal("audio")]),
+                detail: t.Optional(
+                  t.Union([
+                    t.Literal("auto"),
+                    t.Literal("low"),
+                    t.Literal("high"),
+                  ]),
+                ),
+                format: t.Optional(
+                  t.Union([t.Literal("wav"), t.Literal("mp3")]),
+                ),
+              }),
+            ),
+          ],
+          {
+            default: "",
+          },
+        ),
+        attachments: t.Optional(
+          t.Array(
+            t.Object({
+              type: t.String(),
+              data: t.Union([t.String(), t.Any()]),
+            }),
+          ),
+        ),
+      }),
+
+      detail: {
+        summary: "Thread inference (chat)",
+        description:
+          "Performs inference on a thread with the provided message and agent name along with the thread ID on which the inference should be performed.",
+        tags: ["Threads"],
+      },
+    },
+  )
   // Add tool to agent
   .post(
     "/:agentName/add-tool/:toolName",
