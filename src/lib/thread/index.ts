@@ -92,8 +92,8 @@ export async function threadInfer({
 }
 
 const paramsSchema = z.object({
-  query: z.string().describe("Query/Talk to the knowledge base"),
-  k: z.number().describe("Top k number of results to return"),
+  query: z.string().describe("Search query"),
+  k: z.number().default(2).describe("Top k number of results to return"),
 });
 
 export function knowledgeBaseTool(kb: KnowledgeBase): Tool<z.ZodObject<any>> {
@@ -108,18 +108,18 @@ export function knowledgeBaseTool(kb: KnowledgeBase): Tool<z.ZodObject<any>> {
           params.query,
           params.k,
         );
-        return results;
+        return JSON.stringify(results);
       } catch (error) {
         console.error("Error querying knowledge Base", error);
         throw error;
       }
     },
     parse: (params: string) => {
-      try {
-        return JSON.parse(params);
-      } catch {
-        return params;
-      }
+      console.log("Parsing params", params);
+      const parsed = typeof params === "string" ? JSON.parse(params) : params;
+      const valid = paramsSchema.parse(parsed);
+      console.log("Valid params", valid);
+      return valid;
     },
     errorParser: (error: unknown) =>
       `Error: ${error instanceof Error ? error.message : String(error)}`,

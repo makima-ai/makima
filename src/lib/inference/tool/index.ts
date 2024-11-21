@@ -25,8 +25,10 @@ export class Tool<T extends ZodSchema> implements ToolInterface {
 
   async run(params: unknown, context: ToolContext): Promise<ToolResponse> {
     const id = context.id;
+    let parserError = true;
     try {
       params = this.parse ? this.parse(params as string) : params;
+      parserError = false;
 
       let result = await this.function(params as InferParams<T>);
 
@@ -40,10 +42,17 @@ export class Tool<T extends ZodSchema> implements ToolInterface {
         content: String(result),
       };
     } catch (error) {
+      let message = this.errorParser ? this.errorParser(error) : String(error);
+
+      if (parserError) {
+        message = `There was an error cause by you by providing invalid parameters:
+${message}`;
+      }
+
       return {
         id,
         role: "tool_response",
-        content: this.errorParser ? this.errorParser(error) : String(error),
+        content: message,
       };
     }
   }

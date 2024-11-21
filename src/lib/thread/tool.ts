@@ -57,11 +57,9 @@ export function createToolFromDb(dbTool: DbTool): Tool<z.ZodObject<any>> {
       }
     },
     parse: (params: string) => {
-      try {
-        return JSON.parse(params);
-      } catch {
-        return params;
-      }
+      const parsed = JSON.parse(params);
+      const valid = paramsSchema.parse(parsed);
+      return valid;
     },
     errorParser: (error: unknown) =>
       `Error: ${error instanceof Error ? error.message : String(error)}`,
