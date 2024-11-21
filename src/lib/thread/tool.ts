@@ -50,7 +50,7 @@ export function createToolFromDb(dbTool: DbTool): Tool<z.ZodObject<any>> {
 
         // Parse the response
         const result = await response.json();
-        return result;
+        return JSON.stringify(result);
       } catch (error) {
         console.error("Error calling tool API:", error);
         throw error;

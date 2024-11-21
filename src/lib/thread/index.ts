@@ -108,7 +108,11 @@ export function knowledgeBaseTool(kb: KnowledgeBase): Tool<z.ZodObject<any>> {
           params.query,
           params.k,
         );
-        return JSON.stringify(results);
+        const filtered = results.map((result) => ({
+          content: result.content,
+          metadata: result.metadata,
+        }));
+        return JSON.stringify(filtered);
       } catch (error) {
         console.error("Error querying knowledge Base", error);
         throw error;

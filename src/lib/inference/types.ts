@@ -94,7 +94,7 @@ export interface Tool<T extends ZodSchema = ZodSchema<any>> {
 export type ToolProps<T extends ZodSchema> = {
   name?: string;
   params: T;
-  function: (params: InferParams<T>) => Promise<unknown>;
+  function: (params: InferParams<T>) => Promise<string>;
   parse?: (params: string) => object | string;
   errorParser?: (error: unknown) => string;
 };
