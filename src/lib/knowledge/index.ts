@@ -15,6 +15,8 @@ import type {
   DatabaseDocument,
 } from "./types";
 
+export const supported_database_providers = ["pgvector"] as const;
+
 function createKnowledgeBaseProviderAdapter(
   kb: KnowledgeBase,
 ): KnowledgeProviderAdapter {

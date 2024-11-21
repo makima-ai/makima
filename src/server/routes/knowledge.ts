@@ -12,6 +12,7 @@ import {
   deleteKnowledgeBase,
   updateKnowledgeBase,
   searchKnowledgeBase,
+  supported_database_providers,
 } from "../../lib/knowledge";
 import { Nullable } from "../../util-types";
 import {
@@ -84,7 +85,12 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
         name: t.String({ minLength: 4, maxLength: 255 }),
         description: t.Optional(t.String({ maxLength: 255 })),
         embedding_model: t.String({ minLength: 4, maxLength: 255 }),
-        database_provider: t.String(),
+        database_provider: t.Union(
+          supported_database_providers.map((p) => t.Literal(p)),
+          {
+            default: supported_database_providers[0],
+          },
+        ),
       }),
       response: {
         200: t.Object({
