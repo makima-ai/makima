@@ -21,8 +21,7 @@ Makima is a powerful, web-based Agent Framework designed for building and managi
 - **Thread Management**: Handle conversation threads and message history
 - **Tool Integration**: Add and manage custom tools for agents to use
 - **Knowledge Base**: Store and query vector embeddings for enhanced agent capabilities
-- **RESTful API**: Simple and powerful API for seamless integration
-- **Web Interface**: Manage agents and test them through an intuitive UI
+- **Web Interface**: Manage agents and test them through an intuitive UI (WIP)
 
 ## Getting Started
 
