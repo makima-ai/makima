@@ -193,10 +193,10 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
       }),
 
       detail: {
-        summary: "Thread inference (chat)",
+        summary: "Agent inference (chat)",
         description:
-          "Performs inference on a thread with the provided message and agent name along with the thread ID on which the inference should be performed.",
-        tags: ["Threads"],
+          "Performs inference with an agent with a one time message. This inference call will not keep history, to use history use the thread inference endpoint.",
+        tags: ["Agent"],
       },
     },
   )
