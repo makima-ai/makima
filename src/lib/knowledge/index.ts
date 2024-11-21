@@ -1,3 +1,4 @@
+import type { Static } from "elysia";
 import {
   addKnowledgeBasetoDB,
   getKnowledgeBaseByName,
@@ -11,6 +12,7 @@ import type {
   KnowledgeProviderAdapter,
   Document,
   SearchResult,
+  DatabaseDocument,
 } from "./types";
 
 function createKnowledgeBaseProviderAdapter(
@@ -145,7 +147,7 @@ export async function removeDocumentFromKnowledgeBase(
 export async function getDocumentsFromKnowledgeBase(
   filter: Record<string, string>,
   knowledgeBaseName: string,
-) {
+): Promise<Static<typeof DatabaseDocument>[]> {
   const kb = await getKnowledgeBaseByName(knowledgeBaseName);
   if (!kb) {
     throw new Error(`Knowledge base ${knowledgeBaseName} not found`);

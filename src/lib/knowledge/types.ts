@@ -1,8 +1,18 @@
+import { t, type Static } from "elysia";
+
 export type Document = {
   content: string;
   model?: string;
   metadata?: Record<string, unknown>;
 };
+
+export const DatabaseDocument = t.Object({
+  id: t.String(),
+  content: t.String(),
+  model: t.String(),
+  metadata: t.Record(t.String(), t.Any()),
+  createdAt: t.Date(),
+});
 
 export type KnowledgeBase = {
   name: string;
@@ -17,13 +27,15 @@ export type Embedding = {
   embeddings: number[][];
 };
 
-export type SearchResult = {
-  id: string;
-  content: string;
-  model: string;
-  metadata?: Record<string, unknown>;
-  similarity: number;
-};
+export const SearchResultSchema = t.Object({
+  id: t.String(),
+  content: t.String(),
+  model: t.String(),
+  metadata: t.Optional(t.Record(t.String(), t.Any())),
+  similarity: t.Number(),
+});
+
+export type SearchResult = Static<typeof SearchResultSchema>;
 
 export interface KnowledgeProviderAdapter {
   model: string;
@@ -33,7 +45,9 @@ export interface KnowledgeProviderAdapter {
     document: Partial<Document> & { id: string },
   ): Promise<{ id: string }>;
   removeDocument(documentId: string): Promise<void>;
-  getDocuments(filter: Record<string, string>): Promise<Document[]>;
+  getDocuments(
+    filter: Record<string, string>,
+  ): Promise<Static<typeof DatabaseDocument>[]>;
   delete(): Promise<void>;
   search(
     query: string,

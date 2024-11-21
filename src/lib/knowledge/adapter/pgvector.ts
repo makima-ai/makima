@@ -5,9 +5,11 @@ import type {
   KnowledgeProviderAdapter,
   Document,
   SearchResult,
+  DatabaseDocument,
 } from "../types";
 import { universalEmbed } from "../../inference";
 import { getKnowledgeBaseModels } from "..";
+import type { Static } from "elysia";
 
 interface QueryResultRow {
   [key: string]: unknown;
@@ -260,7 +262,9 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
     );
   }
 
-  async getDocuments(filter: Record<string, string>): Promise<Document[]> {
+  async getDocuments(
+    filter: Record<string, string>,
+  ): Promise<Static<typeof DatabaseDocument>[]> {
     const conditions = Object.entries(filter)
       .map(([key], index) => `metadata->>'${key}' = $${index + 1}`)
       .join(" AND ");
@@ -277,10 +281,11 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
     );
 
     return result.rows.map((row) => ({
-      id: row.id,
-      content: row.content,
-      model: row.model,
-      metadata: row.metadata,
+      id: row.id as string,
+      content: row.content as string,
+      model: row.model as string,
+      metadata: row.metadata as Record<string, unknown>,
+      createdAt: row.created_at as Date,
     }));
   }
 
