@@ -216,7 +216,7 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
         name: t.String({ minLength: 4, maxLength: 255 }),
       }),
       response: {
-        200: t.Array(DatabaseDocument),
+        200: t.Array(t.Partial(DatabaseDocument)),
         404: t.String(),
       },
       query: t.Object({}),
