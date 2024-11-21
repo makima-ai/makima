@@ -1,4 +1,5 @@
 import { t, type Static } from "elysia";
+import { Nullable } from "../../util-types";
 
 export type Document = {
   content: string;
@@ -21,6 +22,16 @@ export type KnowledgeBase = {
   database_provider: string;
   models?: string[] | null;
 };
+
+export const KnowledgeBaseSchema = t.Object({
+  id: t.String(),
+  name: t.String(),
+  description: t.Optional(Nullable(t.String())),
+  embedding_model: t.String(),
+  database_provider: t.String(),
+  models: Nullable(t.Optional(t.Array(t.String()))),
+  createdAt: t.Optional(t.Date()),
+});
 
 export type Embedding = {
   model: string;

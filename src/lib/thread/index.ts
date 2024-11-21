@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { getAgentById, getAgentTools } from "../../db/agent";
 import {
   getThreadDetailsById,
@@ -5,8 +6,11 @@ import {
   addMessagesToThread,
 } from "../../db/thread";
 import { universalInfer } from "../inference";
+import { Tool } from "../inference/tool";
 import type { UserMessage, OutputMessage, Message } from "../inference/types";
+import type { KnowledgeBase } from "../knowledge/types";
 import { createToolFromDb, type DbTool } from "./tool";
+import { searchKnowledgeBase } from "../knowledge";
 
 export async function threadInfer({
   threadId,
@@ -54,16 +58,22 @@ export async function threadInfer({
       newMessages.push(message);
     };
 
+    const knowledgeBases = agent.knowledgeBases || [];
+
+    const kbtools = knowledgeBases.map(knowledgeBaseTool);
+
     // Step 5: Run universalInfer
 
     const dbtools: DbTool[] = await getAgentTools(agent.id);
 
-    const tools = dbtools.map(createToolFromDb);
+    const registerd_tools = dbtools.map(createToolFromDb);
+
+    let tools = registerd_tools.concat(kbtools);
 
     const result = await universalInfer({
       model: agent.primaryModel,
       messages: contextMessages,
-      tools,
+      tools: tools.length > 0 ? tools : undefined,
       onMessage,
     });
 
@@ -79,4 +89,40 @@ export async function threadInfer({
     console.error("Error in threadInfer:", error);
     throw error;
   }
+}
+
+const paramsSchema = z.object({
+  query: z.string().describe("Query/Talk to the knowledge base"),
+  k: z.number().describe("Top k number of results to return"),
+});
+
+function knowledgeBaseTool(kb: KnowledgeBase): Tool<z.ZodObject<any>> {
+  const tool = new Tool({
+    name: `search-knowledge-base-${kb.name}`,
+    params: paramsSchema,
+    function: async (params: z.infer<typeof paramsSchema>) => {
+      console.log("Searching knowledge base", kb.name, params);
+      try {
+        const results = await searchKnowledgeBase(
+          kb.name,
+          params.query,
+          params.k,
+        );
+        return results;
+      } catch (error) {
+        console.error("Error querying knowledge Base", error);
+        throw error;
+      }
+    },
+    parse: (params: string) => {
+      try {
+        return JSON.parse(params);
+      } catch {
+        return params;
+      }
+    },
+    errorParser: (error: unknown) =>
+      `Error: ${error instanceof Error ? error.message : String(error)}`,
+  });
+  return tool;
 }

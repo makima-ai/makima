@@ -33,7 +33,7 @@ export const agentsTable = pgTable("agents", {
   description: text("description"),
   prompt: text("prompt").notNull(),
   primaryModel: text("primary_model").notNull(),
-  fallbackModels: jsonb("fallback_models"),
+  fallbackModels: jsonb("fallback_models").$type<string[]>(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -89,4 +89,13 @@ export const knowledgeBaseTable = pgTable("knowledge_bases", {
   database_provider: text("database_provider").notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const agentKnowledgeBasesTable = pgTable("agent_knowledge_bases", {
+  agentId: text("agent_id")
+    .notNull()
+    .references(() => agentsTable.id, { onDelete: "cascade" }),
+  knowledgeBaseId: text("knowledge_base_id")
+    .notNull()
+    .references(() => knowledgeBaseTable.id, { onDelete: "cascade" }),
 });

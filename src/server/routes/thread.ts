@@ -147,13 +147,13 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
     },
     {
       params: t.Object({
-        id: t.String({ minLength: 4, maxLength: 255 }),
+        id: t.String({ minLength: 3, maxLength: 255 }),
       }),
       body: t.Object({
-        agentName: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
+        agentName: t.Optional(t.String({ minLength: 3, maxLength: 255 })),
         message: t.Object({
           role: t.Literal("human", { default: "human" }),
-          name: t.String({ minLength: 4, maxLength: 255 }),
+          name: t.String({ minLength: 3, maxLength: 255 }),
           content: t.Union(
             [
               t.String({ minLength: 1 }),

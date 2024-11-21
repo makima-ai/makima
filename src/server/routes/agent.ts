@@ -13,6 +13,11 @@ import {
   addToolToAgentByName,
   removeToolFromAgentByName,
 } from "../../db/agent";
+import {
+  addKnowledgeBaseToAgentByName,
+  removeKnowledgeBaseFromAgentByName,
+} from "../../db/agent-knowledge";
+import { getKnowledgeBaseByName } from "../../db/knowledge";
 
 export const agentRoute = new Elysia({ prefix: "/agent" })
   .get(
@@ -191,6 +196,72 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         summary: "Remove tool from agent",
         description:
           "Removes a tool from an agent by the agent name and tool name. This operation is used to disassociate a tool from an agent.",
+        tags: ["Agent"],
+      },
+    },
+  )
+  .post(
+    "/:agentName/add-knowledge-base/:knowledgeBaseName",
+    async ({ params: { agentName, knowledgeBaseName }, error }) => {
+      const agent = await getAgentByName(agentName);
+      if (!agent) {
+        return error(404, "Agent not found");
+      }
+
+      const knowledgeBase = await getKnowledgeBaseByName(knowledgeBaseName);
+      if (!knowledgeBase) {
+        return error(404, "Knowledge base not found");
+      }
+
+      const updatedAgent = await addKnowledgeBaseToAgentByName(
+        agentName,
+        knowledgeBaseName,
+      );
+      return updatedAgent;
+    },
+    {
+      params: t.Object({
+        agentName: t.String({ minLength: 4, maxLength: 255 }),
+        knowledgeBaseName: t.String({ minLength: 4, maxLength: 255 }),
+      }),
+      detail: {
+        summary: "Add knowledge base to agent",
+        description:
+          "Adds a knowledge base to an agent by the agent name and knowledge base name. This operation is used to associate a knowledge base with an agent.",
+        tags: ["Agent"],
+      },
+    },
+  )
+
+  // Remove knowledge base from agent
+  .post(
+    "/:agentName/remove-knowledge-base/:knowledgeBaseName",
+    async ({ params: { agentName, knowledgeBaseName }, error }) => {
+      const agent = await getAgentByName(agentName);
+      if (!agent) {
+        return error(404, "Agent not found");
+      }
+
+      const knowledgeBase = await getKnowledgeBaseByName(knowledgeBaseName);
+      if (!knowledgeBase) {
+        return error(404, "Knowledge base not found");
+      }
+
+      const updatedAgent = await removeKnowledgeBaseFromAgentByName(
+        agentName,
+        knowledgeBaseName,
+      );
+      return updatedAgent;
+    },
+    {
+      params: t.Object({
+        agentName: t.String({ minLength: 4, maxLength: 255 }),
+        knowledgeBaseName: t.String({ minLength: 4, maxLength: 255 }),
+      }),
+      detail: {
+        summary: "Remove knowledge base from agent",
+        description:
+          "Removes a knowledge base from an agent by the agent name and knowledge base name. This operation is used to disassociate a knowledge base from an agent.",
         tags: ["Agent"],
       },
     },

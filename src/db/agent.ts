@@ -1,6 +1,12 @@
 import { db } from "../db";
 import { eq, and } from "drizzle-orm";
-import { agentsTable, toolsTable, agentToolsTable } from "./schema";
+import {
+  agentsTable,
+  toolsTable,
+  agentToolsTable,
+  knowledgeBaseTable,
+  agentKnowledgeBasesTable,
+} from "./schema";
 
 // Agent CRUD operations
 
@@ -38,7 +44,23 @@ export const getAgentById = async (id: string) => {
       .innerJoin(toolsTable, eq(agentToolsTable.toolId, toolsTable.id))
       .where(eq(agentToolsTable.agentId, id));
 
-    return { ...agent, tools };
+    const knowledgeBases = await db
+      .select({
+        id: knowledgeBaseTable.id,
+        name: knowledgeBaseTable.name,
+        embedding_model: knowledgeBaseTable.embedding_model,
+        models: knowledgeBaseTable.models,
+        database_provider: knowledgeBaseTable.database_provider,
+        description: knowledgeBaseTable.description,
+      })
+      .from(agentKnowledgeBasesTable)
+      .innerJoin(
+        knowledgeBaseTable,
+        eq(agentKnowledgeBasesTable.knowledgeBaseId, knowledgeBaseTable.id),
+      )
+      .where(eq(agentKnowledgeBasesTable.agentId, id));
+
+    return { ...agent, tools, knowledgeBases };
   } catch (error) {
     console.error("Error getting agent:", error);
     throw error;
@@ -63,7 +85,23 @@ export const getAgentByName = async (name: string) => {
       .innerJoin(toolsTable, eq(agentToolsTable.toolId, toolsTable.id))
       .where(eq(agentToolsTable.agentId, agent.id));
 
-    return { ...agent, tools };
+    const knowledgeBases = await db
+      .select({
+        id: knowledgeBaseTable.id,
+        name: knowledgeBaseTable.name,
+        embedding_model: knowledgeBaseTable.embedding_model,
+        models: knowledgeBaseTable.models,
+        database_provider: knowledgeBaseTable.database_provider,
+        description: knowledgeBaseTable.description,
+      })
+      .from(agentKnowledgeBasesTable)
+      .innerJoin(
+        knowledgeBaseTable,
+        eq(agentKnowledgeBasesTable.knowledgeBaseId, knowledgeBaseTable.id),
+      )
+      .where(eq(agentKnowledgeBasesTable.agentId, agent.id));
+
+    return { ...agent, tools, knowledgeBases };
   } catch (error) {
     console.error("Error getting agent:", error);
     throw error;
