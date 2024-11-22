@@ -184,6 +184,11 @@ export function convertMessageToChatCompletionMessageParam(
   message: Message,
 ): ChatCompletionMessageParam {
   switch (message.role) {
+    case "system":
+      return {
+        role: "system",
+        content: message.content,
+      };
     case "human":
       return {
         role: "user",

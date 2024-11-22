@@ -7,7 +7,12 @@ import {
 } from "../../db/thread";
 import { universalInfer } from "../inference";
 import { Tool } from "../inference/tool";
-import type { UserMessage, OutputMessage, Message } from "../inference/types";
+import type {
+  UserMessage,
+  OutputMessage,
+  Message,
+  SystemMessage,
+} from "../inference/types";
 import type { KnowledgeBase } from "../knowledge/types";
 import { createToolFromDb, type DbTool } from "./tool";
 import { searchKnowledgeBase } from "../knowledge";
@@ -48,10 +53,16 @@ export async function threadInfer({
     }
 
     // Step 3 & 4: Prepare messages and set up tracking
+    const systemMessage: SystemMessage = {
+      role: "system",
+      content: agent.prompt,
+    };
     const previousMessages = await getMessagesByThreadId(threadId);
-    const contextMessages = [...previousMessages.slice(-9), newMessage].slice(
-      -10,
-    );
+    const contextMessages = [
+      systemMessage,
+      ...previousMessages.slice(-9),
+      newMessage,
+    ].slice(-10);
     const newMessages: Message[] = [newMessage];
 
     const onMessage = (message: Message) => {

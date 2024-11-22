@@ -1,7 +1,12 @@
 import { knowledgeBaseTool } from ".";
 import { getAgentByName, getAgentTools } from "../../db/agent";
 import { universalInfer } from "../inference";
-import type { UserMessage, OutputMessage, Message } from "../inference/types";
+import type {
+  UserMessage,
+  OutputMessage,
+  Message,
+  SystemMessage,
+} from "../inference/types";
 import { createToolFromDb, type DbTool } from "./tool";
 
 export async function agentInfer({
@@ -19,7 +24,12 @@ export async function agentInfer({
     throw new Error(`Agent "${agentName}" not found`);
   }
 
-  const newMessages: Message[] = [newMessage];
+  const agentSystemPrompt: SystemMessage = {
+    role: "system",
+    content: agent.prompt,
+  };
+
+  const newMessages: Message[] = [agentSystemPrompt, newMessage];
 
   const onMessage = (message: Message) => {
     newMessages.push(message);

@@ -40,6 +40,11 @@ export type AiMessage = {
   content: string;
 };
 
+export type SystemMessage = {
+  role: "system";
+  content: string;
+};
+
 export type ToolCalls = {
   role: "tool_calls";
   content?: string;
@@ -56,7 +61,12 @@ export type ToolResponse = {
   content: string;
 };
 
-export type Message = UserMessage | AiMessage | ToolCalls | ToolResponse;
+export type Message =
+  | UserMessage
+  | AiMessage
+  | ToolCalls
+  | ToolResponse
+  | SystemMessage;
 
 export type OutputMessage = AiMessage | ToolCalls;
 

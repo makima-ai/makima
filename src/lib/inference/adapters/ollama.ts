@@ -140,6 +140,8 @@ export class OllamaAdapter implements ModelAdapter {
 
   private convertMessageToOllamaFormat(message: Message): OllamaMessage {
     switch (message.role) {
+      case "system":
+        return { role: "system", content: message.content };
       case "human":
         return {
           role: "user",
