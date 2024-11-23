@@ -97,7 +97,7 @@ bun test
 
 - Use clear and meaningful commit messages.
 - For commit message format, we follow the [Conventional Commits](https://www.conventionalcommits.org/) specification.
-- Use feature branches for your work, with the format: `feature/your-feature-name` or `fix/your-fix-name`.
+- Use feature branches for your work, with the format: `feat: your-feature-name` or `fix: your-fix-name`.
 
 ## Pull Request Process
 
