@@ -59,8 +59,33 @@ export const agentToolsTable = pgTable("agent_tools", {
     .references(() => toolsTable.id, { onDelete: "cascade" }),
 });
 
+export const agentHelperTable = pgTable("agent_helpers", {
+  mainAgentId: text("main_agent_id")
+    .notNull()
+    .references(() => agentsTable.id, { onDelete: "cascade" }),
+  helperAgentId: text("helper_agent_id")
+    .notNull()
+    .references(() => agentsTable.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Simplified relations syntax
 export const agentsRelations = relations(agentsTable, ({ many }) => ({
   tools: many(agentToolsTable),
+  mainAgentConnections: many(agentHelperTable),
+  helperAgentConnections: many(agentHelperTable),
+}));
+
+// Helper table relations
+export const agentHelperRelations = relations(agentHelperTable, ({ one }) => ({
+  mainAgent: one(agentsTable, {
+    fields: [agentHelperTable.mainAgentId],
+    references: [agentsTable.id],
+  }),
+  helperAgent: one(agentsTable, {
+    fields: [agentHelperTable.helperAgentId],
+    references: [agentsTable.id],
+  }),
 }));
 
 export const toolsRelations = relations(toolsTable, ({ many }) => ({

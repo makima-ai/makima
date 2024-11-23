@@ -1,4 +1,3 @@
-import { knowledgeBaseTool } from ".";
 import { getAgentByName, getAgentTools } from "../../db/agent";
 import { universalInfer } from "../inference";
 import type {
@@ -7,7 +6,12 @@ import type {
   Message,
   SystemMessage,
 } from "../inference/types";
-import { createToolFromDb, type DbTool } from "./tool";
+import {
+  createToolFromAgent,
+  createToolFromDb,
+  createToolFromKB,
+  type DbTool,
+} from "./tool";
 
 export async function agentInfer({
   agentName,
@@ -37,15 +41,18 @@ export async function agentInfer({
 
   const knowledgeBases = agent.knowledgeBases || [];
 
-  const kbtools = knowledgeBases.map(knowledgeBaseTool);
+  const kbtools = knowledgeBases.map(createToolFromKB);
 
-  // Step 5: Run universalInfer
+  const helperAgent = agent.helperAgents;
+
+  const atools = helperAgent?.map((a) => createToolFromAgent(a, agent)) || [];
 
   const dbtools: DbTool[] = await getAgentTools(agent.id);
 
   const registerd_tools = dbtools.map(createToolFromDb);
 
   let tools = registerd_tools.concat(kbtools);
+  tools = tools.concat(atools);
 
   const result = await universalInfer({
     model: agent.primaryModel,

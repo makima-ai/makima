@@ -1,6 +1,12 @@
 import type { ZodSchema, infer as InferZod } from "zod";
-import type { contextsTable, messagesTable } from "../../db/schema";
-import type { Embedding, Document } from "../knowledge/types";
+import type {
+  agentsTable,
+  contextsTable,
+  messagesTable,
+} from "../../db/schema";
+import type { Embedding, Document, KnowledgeBase } from "../knowledge/types";
+import type { DbTool } from "../thread/tool";
+import type { JsonSchema7Type } from "zod-to-json-schema";
 
 export type MessageContent = string | (ImageContent | AudioContent)[];
 
@@ -95,18 +101,35 @@ export type ToolContext = {
 export type InferParams<T extends ZodSchema = ZodSchema<any>> =
   T extends ZodSchema ? InferZod<T> : unknown;
 
-export interface Tool<T extends ZodSchema = ZodSchema<any>> {
+export interface Tool {
   name: string;
-  run: (params: InferParams<T>, context: ToolContext) => Promise<ToolResponse>;
-  params?: T;
+  description: string;
+  run: (params: object, context: ToolContext) => Promise<ToolResponse>;
+  params?: JsonSchema7Type;
 }
 
-export type ToolProps<T extends ZodSchema> = {
+export type ToolProps = {
   name?: string;
-  params: T;
-  function: (params: InferParams<T>) => Promise<string>;
+  params: JsonSchema7Type;
+  description: string;
+  function: (params: unknown) => Promise<string>;
   parse?: (params: string) => object | string;
   errorParser?: (error: unknown) => string;
+};
+
+type DbAgent = typeof agentsTable.$inferSelect;
+
+export type Agent = {
+  name: string;
+  description?: string | null;
+  prompt: string;
+  primaryModel: string;
+  fallbackModels?: string[] | null;
+  id: string;
+  tools?: DbTool[] | null;
+  knowledgeBases?: KnowledgeBase[] | null;
+  helperAgents?: DbAgent[] | null;
+  usedByAgents?: DbAgent[] | null;
 };
 
 export interface ModelAdapter {

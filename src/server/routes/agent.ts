@@ -12,6 +12,8 @@ import {
   getAgentByName,
   addToolToAgentByName,
   removeToolFromAgentByName,
+  addHelperAgentByName,
+  removeHelperAgentByName,
 } from "../../db/agent";
 import {
   addKnowledgeBaseToAgentByName,
@@ -196,6 +198,77 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         summary: "Agent inference (chat)",
         description:
           "Performs inference with an agent with a one time message. This inference call will not keep history, to use history use the thread inference endpoint.",
+        tags: ["Agent"],
+      },
+    },
+  )
+  // Add helper agent
+  .post(
+    "/:agentName/add-helper/:helperAgentName",
+    async ({ params: { agentName, helperAgentName }, error }) => {
+      const [agent, helperAgent] = await Promise.all([
+        getAgentByName(agentName),
+        getAgentByName(helperAgentName),
+      ]);
+
+      if (!agent) {
+        return error(404, "Agent not found");
+      }
+      if (!helperAgent) {
+        return error(404, "Helper agent not found");
+      }
+
+      const updatedAgent = await addHelperAgentByName(
+        agentName,
+        helperAgentName,
+      );
+      return updatedAgent;
+    },
+    {
+      params: t.Object({
+        agentName: t.String({ minLength: 4, maxLength: 255 }),
+        helperAgentName: t.String({ minLength: 4, maxLength: 255 }),
+      }),
+      detail: {
+        summary: "Add helper agent",
+        description:
+          "Adds a helper agent to an agent by their names. This operation allows the main agent to use the helper agent's capabilities.",
+        tags: ["Agent"],
+      },
+    },
+  )
+
+  // Remove helper agent
+  .post(
+    "/:agentName/remove-helper/:helperAgentName",
+    async ({ params: { agentName, helperAgentName }, error }) => {
+      const [agent, helperAgent] = await Promise.all([
+        getAgentByName(agentName),
+        getAgentByName(helperAgentName),
+      ]);
+
+      if (!agent) {
+        return error(404, "Agent not found");
+      }
+      if (!helperAgent) {
+        return error(404, "Helper agent not found");
+      }
+
+      const updatedAgent = await removeHelperAgentByName(
+        agentName,
+        helperAgentName,
+      );
+      return updatedAgent;
+    },
+    {
+      params: t.Object({
+        agentName: t.String({ minLength: 4, maxLength: 255 }),
+        helperAgentName: t.String({ minLength: 4, maxLength: 255 }),
+      }),
+      detail: {
+        summary: "Remove helper agent",
+        description:
+          "Removes a helper agent from an agent by their names. This operation removes the main agent's ability to use the helper agent's capabilities.",
         tags: ["Agent"],
       },
     },

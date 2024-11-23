@@ -1,23 +1,23 @@
 import type {
-  InferParams,
   ToolContext,
   Tool as ToolInterface,
   ToolProps,
   ToolResponse,
 } from "../types";
-import type { ZodSchema } from "zod";
 
-export class Tool<T extends ZodSchema> implements ToolInterface {
+export class Tool implements ToolInterface {
   public name: string;
-  public params: ToolProps<T>["params"];
-  private function: ToolProps<T>["function"];
-  private parse: ToolProps<T>["parse"];
+  public params: ToolProps["params"];
+  public description: ToolProps["description"];
+  private function: ToolProps["function"];
+  private parse: ToolProps["parse"];
 
-  private errorParser: ToolProps<T>["errorParser"];
+  private errorParser: ToolProps["errorParser"];
 
-  constructor(options: ToolProps<T>) {
+  constructor(options: ToolProps) {
     this.name = options.name || options.function.name;
     this.params = options.params;
+    this.description = options.description;
     this.function = options.function;
     this.parse = options.parse;
     this.errorParser = options.errorParser;
@@ -30,7 +30,7 @@ export class Tool<T extends ZodSchema> implements ToolInterface {
       params = this.parse ? this.parse(params as string) : params;
       parserError = false;
 
-      let result = await this.function(params as InferParams<T>);
+      let result = await this.function(params);
 
       if (typeof result !== "string") {
         result = JSON.stringify(result);
@@ -46,7 +46,11 @@ export class Tool<T extends ZodSchema> implements ToolInterface {
 
       if (parserError) {
         message = `There was an error cause by you by providing invalid parameters:
-${message}`;
+${message}
+
+plz inform user about this immediately.
+`;
+        console.error("Error parsing tool parameters:", message);
       }
 
       return {

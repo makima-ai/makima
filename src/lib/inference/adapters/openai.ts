@@ -12,9 +12,7 @@ import type {
   ChatCompletionMessageParam,
   ChatCompletionTool,
 } from "openai/resources/index.mjs";
-import zodToJsonSchema from "zod-to-json-schema";
 import type { JSONSchema } from "openai/lib/jsonschema.mjs";
-import { z } from "zod";
 import type { Embedding, Document } from "../../knowledge/types";
 
 export class OpenAIAdapter implements ModelAdapter {
@@ -166,11 +164,11 @@ export class OpenAIAdapter implements ModelAdapter {
 export function convertToolToChatCompletionTool(
   tool: Tool,
 ): ChatCompletionTool {
-  const params = zodToJsonSchema(tool.params ?? z.object({})) as JSONSchema;
+  const params = tool.params as JSONSchema;
   return {
     function: {
       name: tool.name,
-      description: params.description,
+      description: tool.description,
       parameters: {
         type: "object",
         properties: params.properties,

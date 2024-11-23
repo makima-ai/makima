@@ -203,12 +203,8 @@ export class OllamaAdapter implements ModelAdapter {
       type: "function",
       function: {
         name: tool.name,
-        description: tool.params?.description || "",
-        parameters: {
-          type: "object",
-          required: tool.params ? Object.keys(tool.params) : [],
-          properties: tool.params || {},
-        },
+        description: tool.description || "",
+        parameters: tool.params as any,
       },
     }));
   }

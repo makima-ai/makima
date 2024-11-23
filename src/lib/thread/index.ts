@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { getAgentById, getAgentByName, getAgentTools } from "../../db/agent";
 import {
   getThreadDetailsById,
@@ -6,16 +5,18 @@ import {
   addMessagesToThread,
 } from "../../db/thread";
 import { universalInfer } from "../inference";
-import { Tool } from "../inference/tool";
 import type {
   UserMessage,
   OutputMessage,
   Message,
   SystemMessage,
 } from "../inference/types";
-import type { KnowledgeBase } from "../knowledge/types";
-import { createToolFromDb, type DbTool } from "./tool";
-import { searchKnowledgeBase } from "../knowledge";
+import {
+  createToolFromAgent,
+  createToolFromDb,
+  createToolFromKB,
+  type DbTool,
+} from "./tool";
 
 export async function threadInfer({
   threadId,
@@ -71,7 +72,11 @@ export async function threadInfer({
 
     const knowledgeBases = agent.knowledgeBases || [];
 
-    const kbtools = knowledgeBases.map(knowledgeBaseTool);
+    const kbtools = knowledgeBases.map(createToolFromKB);
+
+    const helperAgents = agent.helperAgents || [];
+
+    const atools = helperAgents.map((a) => createToolFromAgent(a, agent));
 
     // Step 5: Run universalInfer
 
@@ -80,6 +85,7 @@ export async function threadInfer({
     const registerd_tools = dbtools.map(createToolFromDb);
 
     let tools = registerd_tools.concat(kbtools);
+    tools = tools.concat(atools);
 
     const result = await universalInfer({
       model: agent.primaryModel,
@@ -100,44 +106,4 @@ export async function threadInfer({
     console.error("Error in threadInfer:", error);
     throw error;
   }
-}
-
-const paramsSchema = z.object({
-  query: z.string().describe("Search query"),
-  k: z.number().default(2).describe("Top k number of results to return"),
-});
-
-export function knowledgeBaseTool(kb: KnowledgeBase): Tool<z.ZodObject<any>> {
-  const tool = new Tool({
-    name: `search-knowledge-base-${kb.name}`,
-    params: paramsSchema,
-    function: async (params: z.infer<typeof paramsSchema>) => {
-      console.log("Searching knowledge base", kb.name, params);
-      try {
-        const results = await searchKnowledgeBase(
-          kb.name,
-          params.query,
-          params.k,
-        );
-        const filtered = results.map((result) => ({
-          content: result.content,
-          metadata: result.metadata,
-        }));
-        return JSON.stringify(filtered);
-      } catch (error) {
-        console.error("Error querying knowledge Base", error);
-        throw error;
-      }
-    },
-    parse: (params: string) => {
-      console.log("Parsing params", params);
-      const parsed = typeof params === "string" ? JSON.parse(params) : params;
-      const valid = paramsSchema.parse(parsed);
-      console.log("Valid params", valid);
-      return valid;
-    },
-    errorParser: (error: unknown) =>
-      `Error: ${error instanceof Error ? error.message : String(error)}`,
-  });
-  return tool;
 }

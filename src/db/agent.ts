@@ -6,7 +6,10 @@ import {
   agentToolsTable,
   knowledgeBaseTable,
   agentKnowledgeBasesTable,
+  agentHelperTable,
 } from "./schema";
+import type { Agent } from "../lib/inference/types";
+import type { DbTool } from "../lib/thread/tool";
 
 // Agent CRUD operations
 
@@ -26,7 +29,7 @@ export const createAgent = async (agent: {
   }
 };
 
-export const getAgentById = async (id: string) => {
+export const getAgentById = async (id: string): Promise<Agent | null> => {
   try {
     const [agent] = await db
       .select()
@@ -34,15 +37,20 @@ export const getAgentById = async (id: string) => {
       .where(eq(agentsTable.id, id));
     if (!agent) return null;
 
+    // Existing queries remain the same
     const tools = await db
       .select({
         id: toolsTable.id,
         name: toolsTable.name,
         description: toolsTable.description,
+        params: toolsTable.params,
+        endpoint: toolsTable.endpoint,
+        method: toolsTable.method,
+        createdAt: toolsTable.createdAt,
       })
       .from(agentToolsTable)
       .innerJoin(toolsTable, eq(agentToolsTable.toolId, toolsTable.id))
-      .where(eq(agentToolsTable.agentId, id));
+      .where(eq(agentToolsTable.agentId, agent.id));
 
     const knowledgeBases = await db
       .select({
@@ -60,14 +68,47 @@ export const getAgentById = async (id: string) => {
       )
       .where(eq(agentKnowledgeBasesTable.agentId, id));
 
-    return { ...agent, tools, knowledgeBases };
+    // Add queries for helper agents
+    const helperAgents = await db
+      .select({
+        id: agentsTable.id,
+        name: agentsTable.name,
+        description: agentsTable.description,
+        prompt: agentsTable.prompt,
+        primaryModel: agentsTable.primaryModel,
+        fallbackModels: agentsTable.fallbackModels,
+        createdAt: agentsTable.createdAt,
+      })
+      .from(agentHelperTable)
+      .innerJoin(
+        agentsTable,
+        eq(agentHelperTable.helperAgentId, agentsTable.id),
+      )
+      .where(eq(agentHelperTable.mainAgentId, id));
+
+    const usedByAgents = await db
+      .select({
+        id: agentsTable.id,
+        name: agentsTable.name,
+        description: agentsTable.description,
+        prompt: agentsTable.prompt,
+        primaryModel: agentsTable.primaryModel,
+        fallbackModels: agentsTable.fallbackModels,
+        createdAt: agentsTable.createdAt,
+      })
+      .from(agentHelperTable)
+      .innerJoin(agentsTable, eq(agentHelperTable.mainAgentId, agentsTable.id))
+      .where(eq(agentHelperTable.helperAgentId, id));
+
+    return { ...agent, tools, knowledgeBases, helperAgents, usedByAgents };
   } catch (error) {
     console.error("Error getting agent:", error);
     throw error;
   }
 };
 
-export const getAgentByName = async (name: string) => {
+// Update the getAgentByName function similarly
+export const getAgentByName = async (name: string): Promise<Agent | null> => {
   try {
     const [agent] = await db
       .select()
@@ -75,11 +116,16 @@ export const getAgentByName = async (name: string) => {
       .where(eq(agentsTable.name, name));
     if (!agent) return null;
 
+    // Existing queries remain the same
     const tools = await db
       .select({
         id: toolsTable.id,
         name: toolsTable.name,
         description: toolsTable.description,
+        params: toolsTable.params,
+        endpoint: toolsTable.endpoint,
+        method: toolsTable.method,
+        createdAt: toolsTable.createdAt,
       })
       .from(agentToolsTable)
       .innerJoin(toolsTable, eq(agentToolsTable.toolId, toolsTable.id))
@@ -101,7 +147,45 @@ export const getAgentByName = async (name: string) => {
       )
       .where(eq(agentKnowledgeBasesTable.agentId, agent.id));
 
-    return { ...agent, tools, knowledgeBases };
+    // Add queries for helper agents
+    const helperAgents = await db
+      .select({
+        id: agentsTable.id,
+        name: agentsTable.name,
+        description: agentsTable.description,
+        prompt: agentsTable.prompt,
+        primaryModel: agentsTable.primaryModel,
+        fallbackModels: agentsTable.fallbackModels,
+        createdAt: agentsTable.createdAt,
+      })
+      .from(agentHelperTable)
+      .innerJoin(
+        agentsTable,
+        eq(agentHelperTable.helperAgentId, agentsTable.id),
+      )
+      .where(eq(agentHelperTable.mainAgentId, agent.id));
+
+    const usedByAgents = await db
+      .select({
+        id: agentsTable.id,
+        name: agentsTable.name,
+        description: agentsTable.description,
+        prompt: agentsTable.prompt,
+        primaryModel: agentsTable.primaryModel,
+        fallbackModels: agentsTable.fallbackModels,
+        createdAt: agentsTable.createdAt,
+      })
+      .from(agentHelperTable)
+      .innerJoin(agentsTable, eq(agentHelperTable.mainAgentId, agentsTable.id))
+      .where(eq(agentHelperTable.helperAgentId, agent.id));
+
+    return {
+      ...agent,
+      tools,
+      knowledgeBases,
+      helperAgents,
+      usedByAgents,
+    };
   } catch (error) {
     console.error("Error getting agent:", error);
     throw error;
@@ -175,6 +259,100 @@ export const getAgentTools = async (agentIdOrName: string) => {
     return tools;
   } catch (error) {
     console.error("Error getting agent tools:", error);
+    throw error;
+  }
+};
+
+// Agent to agent relationship operations
+
+export const addHelperAgent = async (
+  mainAgentId: string,
+  helperAgentId: string,
+) => {
+  try {
+    await db.insert(agentHelperTable).values({
+      mainAgentId,
+      helperAgentId,
+    });
+    return await getAgentById(mainAgentId);
+  } catch (error) {
+    console.error("Error adding helper agent:", error);
+    throw error;
+  }
+};
+
+export const addHelperAgentByName = async (
+  mainAgentName: string,
+  helperAgentName: string,
+) => {
+  try {
+    const mainAgent = await getAgentByName(mainAgentName);
+    if (!mainAgent) {
+      throw new Error("Main agent not found");
+    }
+
+    const helperAgent = await getAgentByName(helperAgentName);
+    if (!helperAgent) {
+      throw new Error("Helper agent not found");
+    }
+
+    await db.insert(agentHelperTable).values({
+      mainAgentId: mainAgent.id,
+      helperAgentId: helperAgent.id,
+    });
+    return await getAgentById(mainAgent.id);
+  } catch (error) {
+    console.error("Error adding helper agent by name:", error);
+    throw error;
+  }
+};
+
+export const removeHelperAgent = async (
+  mainAgentId: string,
+  helperAgentId: string,
+) => {
+  try {
+    await db
+      .delete(agentHelperTable)
+      .where(
+        and(
+          eq(agentHelperTable.mainAgentId, mainAgentId),
+          eq(agentHelperTable.helperAgentId, helperAgentId),
+        ),
+      );
+    return await getAgentById(mainAgentId);
+  } catch (error) {
+    console.error("Error removing helper agent:", error);
+    throw error;
+  }
+};
+
+export const removeHelperAgentByName = async (
+  mainAgentName: string,
+  helperAgentName: string,
+) => {
+  try {
+    const mainAgent = await getAgentByName(mainAgentName);
+    if (!mainAgent) {
+      throw new Error("Main agent not found");
+    }
+
+    const helperAgent = await getAgentByName(helperAgentName);
+    if (!helperAgent) {
+      throw new Error("Helper agent not found");
+    }
+
+    await db
+      .delete(agentHelperTable)
+      .where(
+        and(
+          eq(agentHelperTable.mainAgentId, mainAgent.id),
+          eq(agentHelperTable.helperAgentId, helperAgent.id),
+        ),
+      );
+    return await getAgentById(mainAgent.id);
+  } catch (error) {
+    console.error("Error removing helper agent by name:", error);
     throw error;
   }
 };
