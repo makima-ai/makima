@@ -97,7 +97,7 @@ curl --request POST \
   --header 'Content-Type: application/json' \
   --data '{
     "id": "my-first-thread",
-    "platform": "cli",
+    "platform": "curl",
     "agentName": "my-first-agent"
   }'
 ```
