@@ -81,7 +81,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
         WHERE table_name = $1
       );
     `,
-      [this.tableName],
+      [this.tableName]
     );
     return result.rows[0].exists;
   }
@@ -100,7 +100,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
         const normalizedModel = this.normalizeModelName(model);
         const embeddingSize = await this.getEmbeddingSize(model);
         return `embedding_${normalizedModel} vector(${embeddingSize})`;
-      }),
+      })
     );
 
     const allColumns = [baseColumns, ...embeddingColumns].join(", ");
@@ -134,7 +134,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
       FROM information_schema.columns
       WHERE table_name = $1
     `,
-      [this.tableName],
+      [this.tableName]
     );
     return result.rows.map((row) => row.column_name);
   }
@@ -178,7 +178,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
         pgvector.toSql(embedding.embeddings[0]),
         document.metadata,
         model,
-      ],
+      ]
     );
 
     console.debug("Document added with ID:", result.rows[0].id);
@@ -186,7 +186,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
   }
 
   async updateDocument(
-    document: Partial<Document> & { id: string },
+    document: Partial<Document> & { id: string }
   ): Promise<{ id: string }> {
     const model = document.model || this.model;
     const [embedding] = await universalEmbed({
@@ -209,7 +209,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
         document.metadata,
         model,
         document.id,
-      ],
+      ]
     );
 
     return { id: result.rows[0].id };
@@ -218,7 +218,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
   async search(
     query: string,
     k: number,
-    modelFilter?: string,
+    modelFilter?: string
   ): Promise<SearchResult[]> {
     const searchModel = modelFilter || this.model;
     console.debug("Search model:", searchModel);
@@ -238,7 +238,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
       ORDER BY ${embeddingColumn} <-> $1
       LIMIT $3
     `,
-      [pgvector.toSql(queryEmbedding.embeddings[0]), searchModel, k],
+      [pgvector.toSql(queryEmbedding.embeddings[0]), searchModel, k]
     );
 
     console.debug("Search results:", result.rows);
@@ -247,7 +247,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
       id: row.id,
       content: row.content,
       model: row.model,
-      metadata: row.metadata,
+      metadata: row.metadata || undefined,
       similarity: row.similarity,
     }));
   }
@@ -258,12 +258,12 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
       DELETE FROM ${this.tableName}
       WHERE id = $1
     `,
-      [documentId],
+      [documentId]
     );
   }
 
   async getDocuments(
-    filter: Record<string, string>,
+    filter: Record<string, string>
   ): Promise<Static<typeof DatabaseDocument>[]> {
     const conditions = Object.entries(filter)
       .map(([key], index) => `metadata->>'${key}' = $${index + 1}`)
@@ -277,7 +277,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
 
     const result = await this.executeQuery<DocumentRow>(
       query,
-      Object.values(filter),
+      Object.values(filter)
     );
 
     return result.rows.map((row) => ({
@@ -295,7 +295,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
 
   private async executeQuery<T extends QueryResultRow>(
     query: string,
-    params: any[] = [],
+    params: any[] = []
   ): Promise<QueryResult<T>> {
     const client = await this.pool.connect();
     try {
