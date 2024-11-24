@@ -1,8 +1,8 @@
 import { getAgentById, getAgentByName, getAgentTools } from "../../db/agent";
 import {
   getThreadDetailsById,
-  getMessagesByThreadId,
   addMessagesToThread,
+  getScaledMessages,
 } from "../../db/thread";
 import { universalInfer } from "../inference";
 import type {
@@ -53,17 +53,14 @@ export async function threadInfer({
       );
     }
 
-    // Step 3 & 4: Prepare messages and set up tracking
     const systemMessage: SystemMessage = {
       role: "system",
       content: agent.prompt,
     };
-    const previousMessages = await getMessagesByThreadId(threadId);
-    const contextMessages = [
-      systemMessage,
-      ...previousMessages.slice(-9),
-      newMessage,
-    ].slice(-10);
+
+    // Get scaled messages with the agent's model for summarization
+    const scaledMessages = await getScaledMessages(threadId, agent);
+    const contextMessages = [systemMessage, ...scaledMessages, newMessage];
     const newMessages: Message[] = [newMessage];
 
     const onMessage = (message: Message) => {

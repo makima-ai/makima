@@ -1,21 +1,186 @@
 import { db } from "../db";
-import { eq } from "drizzle-orm";
-import { messagesTable, contextsTable, agentsTable } from "./schema";
+import { asc, desc, eq } from "drizzle-orm";
+import {
+  messagesTable,
+  contextsTable,
+  agentsTable,
+  summariesTable,
+} from "./schema";
 import type {
+  Agent,
   AiMessage,
+  BlockScalingConfig,
   Context,
   DbMessage,
   Message,
+  ScalingConfig,
+  ThresholdScalingConfig,
   ToolCalls,
   ToolResponse,
   UserMessage,
+  WindowScalingConfig,
 } from "../lib/inference/types";
+import { generateSummary } from "../lib/thread/summarize";
+
+export async function getScaledMessages(
+  contextId: string,
+  agent: Agent,
+): Promise<Message[]> {
+  const context = await getThreadDetailsById(contextId);
+  if (!context) {
+    throw new Error("Context not found");
+  }
+
+  const allMessages = await getMessagesByThreadId(contextId);
+
+  if (!context.scaling_algorithm || !context.scaling_config) {
+    return allMessages;
+  }
+
+  switch (context.scaling_algorithm) {
+    case "window": {
+      const config = context.scaling_config as WindowScalingConfig;
+      return allMessages.slice(-config.windowSize);
+    }
+
+    case "threshold": {
+      const config = context.scaling_config as ThresholdScalingConfig;
+      if (allMessages.length <= config.totalWindow) {
+        return allMessages;
+      }
+
+      const existingSummary = await db
+        .select()
+        .from(summariesTable)
+        .where(eq(summariesTable.context_id, contextId))
+        .orderBy(desc(summariesTable.created_at))
+        .limit(1)
+        .execute();
+
+      let summaryMessage: Message;
+      if (existingSummary.length === 0) {
+        const messagesToSummarize = allMessages.slice(
+          0,
+          -config.summarizationThreshold,
+        );
+        const summary = await generateSummary(
+          messagesToSummarize,
+          agent.primaryModel,
+        );
+
+        const [newSummary] = await db
+          .insert(summariesTable)
+          .values({
+            context_id: contextId,
+            start_message_id: messagesToSummarize[0].db_id,
+            end_message_id:
+              messagesToSummarize[messagesToSummarize.length - 1].db_id,
+            summary_content: summary.content,
+          })
+          .returning()
+          .execute();
+
+        summaryMessage = {
+          ...summary,
+          db_id: newSummary.id,
+          context_id: contextId,
+        };
+      } else {
+        summaryMessage = {
+          role: "system",
+          content: existingSummary[0].summary_content || "",
+          db_id: existingSummary[0].id,
+          context_id: contextId,
+        };
+      }
+
+      return [
+        summaryMessage,
+        ...allMessages.slice(-config.summarizationThreshold),
+      ];
+    }
+
+    case "block": {
+      const config = context.scaling_config as BlockScalingConfig;
+      const totalBlocks = Math.ceil(allMessages.length / config.blockSize);
+
+      if (totalBlocks <= 1) {
+        return allMessages;
+      }
+
+      const existingBlockSummaries = await db
+        .select()
+        .from(summariesTable)
+        .where(eq(summariesTable.context_id, contextId))
+        .orderBy(asc(summariesTable.block_number))
+        .execute();
+
+      const summaries: Message[] = [];
+      let currentBlock = 0;
+
+      while (currentBlock < totalBlocks - 1) {
+        const blockStart = currentBlock * config.blockSize;
+        const blockEnd = Math.min(
+          (currentBlock + 1) * config.blockSize,
+          allMessages.length,
+        );
+        const blockMessages = allMessages.slice(blockStart, blockEnd);
+
+        const existingSummary = existingBlockSummaries.find(
+          (s) => s.block_number === currentBlock,
+        );
+
+        if (existingSummary) {
+          summaries.push({
+            role: "system",
+            content: existingSummary.summary_content || "",
+            db_id: existingSummary.id,
+            context_id: contextId,
+          });
+        } else {
+          const summary = await generateSummary(
+            blockMessages,
+            agent.primaryModel,
+          );
+          const [newSummary] = await db
+            .insert(summariesTable)
+            .values({
+              context_id: contextId,
+              start_message_id: blockMessages[0].db_id,
+              end_message_id: blockMessages[blockMessages.length - 1].db_id,
+              summary_content: summary.content,
+              block_number: currentBlock,
+            })
+            .returning()
+            .execute();
+
+          summaries.push({
+            ...summary,
+            db_id: newSummary.id,
+            context_id: contextId,
+          });
+        }
+
+        currentBlock++;
+      }
+
+      // Add the most recent block's messages as-is
+      const lastBlockMessages = allMessages.slice(
+        (totalBlocks - 1) * config.blockSize,
+      );
+      return [...summaries, ...lastBlockMessages];
+    }
+
+    default:
+      return allMessages;
+  }
+}
 
 // Helper function to convert DbMessage to Message
 function dbMessageToMessage(dbMessage: DbMessage): Message {
   const baseMessage = {
     db_id: dbMessage.id,
-    context_id: dbMessage.context_id,
+    context_id: dbMessage.context_id || undefined,
     author_id: dbMessage.author_id,
     createdAt: dbMessage.createdAt,
     calls: dbMessage.calls,
@@ -172,12 +337,16 @@ export async function createThread({
   authors,
   id,
   agentName,
+  scalingAlgorithm = "window", // default to window scaling
+  scalingConfig = { type: "window", windowSize: 10 }, // default config
 }: {
   id: string;
   platform: string;
   authors?: string[];
   description?: string;
   agentName: string;
+  scalingAlgorithm?: "window" | "threshold" | "block";
+  scalingConfig?: ScalingConfig;
 }): Promise<{ id: string }> {
   // Look up the agent ID based on the provided name
   const agent = await db
@@ -192,6 +361,27 @@ export async function createThread({
 
   const defaultAgentId = agent[0].id;
 
+  // Validate scaling config matches algorithm
+  if (scalingConfig && scalingConfig.type !== scalingAlgorithm) {
+    throw new Error(
+      `Scaling config type doesn't match algorithm: ${scalingAlgorithm}`,
+    );
+  }
+
+  // Use provided config or create default based on algorithm
+  const finalScalingConfig = scalingConfig || {
+    type: scalingAlgorithm,
+    ...(scalingAlgorithm === "window" && { windowSize: 10 }),
+    ...(scalingAlgorithm === "threshold" && {
+      totalWindow: 50,
+      summarizationThreshold: 20,
+    }),
+    ...(scalingAlgorithm === "block" && {
+      blockSize: 20,
+      maxBlocks: 5,
+    }),
+  };
+
   const result = await db
     .insert(contextsTable)
     .values({
@@ -200,6 +390,8 @@ export async function createThread({
       description,
       authors,
       default_agent_id: defaultAgentId,
+      scaling_algorithm: scalingAlgorithm,
+      scaling_config: finalScalingConfig,
     })
     .returning({ id: contextsTable.id })
     .execute();
@@ -343,6 +535,32 @@ export const updateThreadAgent = async (
 
   return getThreadDetailsById(threadId);
 };
+
+export async function updateThreadScaling(
+  threadId: string,
+  scalingAlgorithm: "window" | "threshold" | "block" | null,
+  scalingConfig: ScalingConfig | null,
+): Promise<Context | null> {
+  // Validate scaling config matches algorithm if both are provided
+  if (scalingAlgorithm && scalingConfig) {
+    if (scalingConfig.type !== scalingAlgorithm) {
+      throw new Error(
+        `Scaling config type doesn't match algorithm: ${scalingAlgorithm}`,
+      );
+    }
+  }
+
+  await db
+    .update(contextsTable)
+    .set({
+      scaling_algorithm: scalingAlgorithm,
+      scaling_config: scalingConfig,
+    })
+    .where(eq(contextsTable.id, threadId))
+    .execute();
+
+  return getThreadDetailsById(threadId);
+}
 
 export async function listAllThreads(): Promise<Context[]> {
   const contexts = await db

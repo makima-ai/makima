@@ -1,5 +1,6 @@
-import { pgTable, text, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, jsonb, timestamp, integer } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
+import type { ScalingConfig } from "../lib/inference/types";
 
 export const contextsTable = pgTable("contexts", {
   id: text("id").primaryKey(),
@@ -7,6 +8,10 @@ export const contextsTable = pgTable("contexts", {
   description: text("description"),
   default_agent_id: text("default_agent_id").references(() => agentsTable.id),
   authors: jsonb("authors").$type<string[]>(),
+  scaling_algorithm: text("scaling_algorithm").$type<
+    "window" | "threshold" | "block"
+  >(),
+  scaling_config: jsonb("scaling_config").$type<ScalingConfig>(),
 });
 
 export const messagesTable = pgTable("messages", {
@@ -22,6 +27,19 @@ export const messagesTable = pgTable("messages", {
   context_id: text("context_id").references(() => contextsTable.id),
   author_id: text("author_id"),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const summariesTable = pgTable("summaries", {
+  id: text("id")
+    .primaryKey()
+    .notNull()
+    .default(sql`gen_random_uuid()`),
+  context_id: text("context_id").references(() => contextsTable.id),
+  start_message_id: text("start_message_id").references(() => messagesTable.id),
+  end_message_id: text("end_message_id").references(() => messagesTable.id),
+  summary_content: text("summary_content"),
+  created_at: timestamp("created_at").defaultNow(),
+  block_number: integer("block_number"),
 });
 
 export const agentsTable = pgTable("agents", {

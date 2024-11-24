@@ -28,7 +28,12 @@ type AudioContent = {
   format: "wav" | "mp3";
 };
 
-export type UserMessage = {
+export type BaseMessage = {
+  db_id?: string;
+  context_id?: string;
+};
+
+export type UserMessage = BaseMessage & {
   role: "human";
   name: string;
   content: MessageContent;
@@ -40,18 +45,18 @@ export type Attachment = {
   data: string | Buffer;
 };
 
-export type AiMessage = {
+export type AiMessage = BaseMessage & {
   role: "ai";
   name: string;
   content: string;
 };
 
-export type SystemMessage = {
+export type SystemMessage = BaseMessage & {
   role: "system";
   content: string;
 };
 
-export type ToolCalls = {
+export type ToolCalls = BaseMessage & {
   role: "tool_calls";
   content?: string;
   calls: {
@@ -61,7 +66,7 @@ export type ToolCalls = {
   }[];
 };
 
-export type ToolResponse = {
+export type ToolResponse = BaseMessage & {
   id: string;
   role: "tool_response";
   content: string;
@@ -86,6 +91,31 @@ export type Context = {
     id: string;
     name: string;
   } | null;
+  scaling_algorithm?: "window" | "threshold" | "block";
+  scaling_config?: ScalingConfig;
+};
+
+export type ScalingConfig =
+  | WindowScalingConfig
+  | ThresholdScalingConfig
+  | BlockScalingConfig;
+
+export type WindowScalingConfig = {
+  type: "window";
+  windowSize: number;
+};
+
+export type ThresholdScalingConfig = {
+  type: "threshold";
+  totalWindow: number;
+  summarizationThreshold: number;
+};
+
+export type BlockScalingConfig = {
+  type: "block";
+  blockSize: number;
+  maxBlocks?: number;
+  blockSummarizationThreshold?: number;
 };
 
 export type DbMessage = typeof messagesTable.$inferSelect;

@@ -7,6 +7,7 @@ import {
   deleteThread,
   updateThreadAgent,
   listAllThreads,
+  updateThreadScaling,
 } from "../../db/thread";
 import type { UserMessage } from "../../lib/inference/types";
 import { threadInfer } from "../../lib/thread";
@@ -70,13 +71,23 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
   .post(
     "/create",
     async ({ body }) => {
-      const { platform, description, authors, id, agentName } = body;
+      const {
+        platform,
+        description,
+        authors,
+        id,
+        agentName,
+        scalingAlgorithm,
+        scalingConfig,
+      } = body;
       const newThread = await createThread({
         id,
         platform,
         description,
         authors,
         agentName,
+        scalingAlgorithm,
+        scalingConfig,
       });
       return newThread;
     },
@@ -89,11 +100,37 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
           t.Array(t.String({ minLength: 4, maxLength: 255 })),
         ),
         agentName: t.String({ minLength: 4, maxLength: 255 }),
+        scalingAlgorithm: t.Optional(
+          t.Union([
+            t.Literal("window"),
+            t.Literal("threshold"),
+            t.Literal("block"),
+          ]),
+        ),
+        scalingConfig: t.Optional(
+          t.Union([
+            t.Object({
+              type: t.Literal("window"),
+              windowSize: t.Number({ minimum: 1 }),
+            }),
+            t.Object({
+              type: t.Literal("threshold"),
+              totalWindow: t.Number({ minimum: 1 }),
+              summarizationThreshold: t.Number({ minimum: 1 }),
+            }),
+            t.Object({
+              type: t.Literal("block"),
+              blockSize: t.Number({ minimum: 1 }),
+              maxBlocks: t.Optional(t.Number({ minimum: 1 })),
+              blockSummarizationThreshold: t.Optional(t.Number({ minimum: 1 })),
+            }),
+          ]),
+        ),
       }),
       detail: {
         summary: "Create a new thread",
         description:
-          "Creates a new thread with the provided details such as platform, description, authors, and agent name.",
+          "Creates a new thread with the provided details including scaling configuration.",
         tags: ["Threads"],
       },
     },
@@ -243,6 +280,68 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
         summary: "Update thread's default agent",
         description:
           "Updates the default agent of a thread by its ID with the provided agent name , can retrun not found or agent could not be updated",
+        tags: ["Threads"],
+      },
+    },
+  )
+  .put(
+    "/:id/scaling",
+    async ({ params: { id }, body, error }) => {
+      const { scalingAlgorithm, scalingConfig } = body;
+
+      if (scalingAlgorithm && !scalingConfig) {
+        return error(
+          400,
+          "Scaling configuration is required with the algorithm",
+        );
+      }
+
+      const updatedThread = await updateThreadScaling(
+        id,
+        scalingAlgorithm || null,
+        scalingConfig || null,
+      );
+      if (!updatedThread) {
+        return error(404, "Thread not found or scaling could not be updated");
+      }
+      return updatedThread;
+    },
+    {
+      params: t.Object({
+        id: t.String({ minLength: 4, maxLength: 255 }),
+      }),
+      body: t.Object({
+        scalingAlgorithm: t.Optional(
+          t.Union([
+            t.Literal("window"),
+            t.Literal("threshold"),
+            t.Literal("block"),
+          ]),
+        ),
+        scalingConfig: t.Optional(
+          t.Union([
+            t.Object({
+              type: t.Literal("window"),
+              windowSize: t.Number({ minimum: 1 }),
+            }),
+            t.Object({
+              type: t.Literal("threshold"),
+              totalWindow: t.Number({ minimum: 1 }),
+              summarizationThreshold: t.Number({ minimum: 1 }),
+            }),
+            t.Object({
+              type: t.Literal("block"),
+              blockSize: t.Number({ minimum: 1 }),
+              maxBlocks: t.Optional(t.Number({ minimum: 1 })),
+              blockSummarizationThreshold: t.Optional(t.Number({ minimum: 1 })),
+            }),
+          ]),
+        ),
+      }),
+      detail: {
+        summary: "Update thread scaling configuration",
+        description:
+          "Updates the scaling algorithm and configuration for a thread.",
         tags: ["Threads"],
       },
     },
