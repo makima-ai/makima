@@ -34,6 +34,7 @@ export async function getScaledMessages(
   const allMessages = await getMessagesByThreadId(contextId);
 
   if (!context.scaling_algorithm || !context.scaling_config) {
+    console.log("No scaling algorithm or config");
     return allMessages;
   }
 
@@ -103,10 +104,12 @@ export async function getScaledMessages(
     case "block": {
       const config = context.scaling_config as BlockScalingConfig;
       const totalBlocks = Math.ceil(allMessages.length / config.blockSize);
-
+      console.log("totalBlocks", totalBlocks);
       if (totalBlocks <= 1) {
+        console.log("totalBlocks <= 1");
         return allMessages;
       }
+
 
       const existingBlockSummaries = await db
         .select()
@@ -116,6 +119,7 @@ export async function getScaledMessages(
         .execute();
 
       const summaries: Message[] = [];
+      console.log("existingBlockSummaries", existingBlockSummaries);
       let currentBlock = 0;
 
       while (currentBlock < totalBlocks - 1) {
@@ -172,6 +176,7 @@ export async function getScaledMessages(
     }
 
     default:
+      console.error("Unknown scaling algorithm:", context.scaling_algorithm);
       return allMessages;
   }
 }
@@ -327,6 +332,8 @@ export async function getThreadDetailsById(
     authors: context.authors as string[],
     default_agent_id: context.default_agent_id,
     default_agent: agent ? { id: agent.id, name: agent.name } : null,
+    scaling_algorithm: context.scaling_algorithm ?? undefined,
+    scaling_config: context.scaling_config ?? undefined,
   };
 }
 
