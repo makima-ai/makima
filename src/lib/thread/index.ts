@@ -89,6 +89,7 @@ export async function threadInfer({
       messages: contextMessages,
       tools: tools.length > 0 ? tools : undefined,
       onMessage,
+      format: agent.format || undefined,
     });
 
     // Step 6: Save all new messages to the thread

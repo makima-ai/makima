@@ -53,6 +53,7 @@ export const agentsTable = pgTable("agents", {
   primaryModel: text("primary_model").notNull(),
   fallbackModels: jsonb("fallback_models").$type<string[]>(),
   createdAt: timestamp("created_at").defaultNow(),
+  format: text("format"),
 });
 
 export const toolsTable = pgTable("tools", {

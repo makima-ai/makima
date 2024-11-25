@@ -109,6 +109,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         prompt: t.Optional(t.String({ minLength: 4 })),
         primaryModel: t.Optional(t.String({ minLength: 4 })),
         fallbackModels: t.Optional(t.Array(t.String({ minLength: 4 }))),
+        format: t.Optional(t.Literal("json")),
       }),
       detail: {
         summary: "Update an agent by name",

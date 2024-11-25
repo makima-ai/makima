@@ -156,6 +156,7 @@ export type Agent = {
   primaryModel: string;
   fallbackModels?: string[] | null;
   id: string;
+  format?: string | null;
   tools?: DbTool[] | null;
   knowledgeBases?: KnowledgeBase[] | null;
   helperAgents?: DbAgent[] | null;
@@ -166,6 +167,7 @@ export interface ModelAdapter {
   ask(params: {
     model: string;
     message: Message;
+    format?: string;
     tools?: Tool[];
     agent_name?: string;
     recursive?: boolean;
@@ -174,6 +176,7 @@ export interface ModelAdapter {
   infer(params: {
     model: string;
     messages: Message[];
+    format?: string;
     tools?: Tool[];
     agent_name?: string;
     recursive?: boolean;

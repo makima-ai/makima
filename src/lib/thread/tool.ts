@@ -157,6 +157,7 @@ description: ${agent.description}
         model: agent.primaryModel,
         messages: [systemMessage, newMessage],
         tools: tools.length > 0 ? tools : undefined,
+        format: agent.format || undefined,
       });
       return JSON.stringify(result);
     },

@@ -37,11 +37,13 @@ export async function universalInfer({
   model,
   messages,
   tools,
+  format,
   onMessage,
 }: {
   model: string;
   messages: Message[];
   tools?: Tool[];
+  format?: string;
   onMessage?: (message: Message) => void;
 }): Promise<OutputMessage> {
   const modelParts = model.split("/");
@@ -60,6 +62,7 @@ export async function universalInfer({
       messages,
       tools,
       onMessage,
+      format,
     });
     return result;
   } catch (error) {

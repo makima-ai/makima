@@ -59,6 +59,7 @@ export async function agentInfer({
     messages: newMessages,
     tools: tools.length > 0 ? tools : undefined,
     onMessage,
+    format: agent.format || undefined,
   });
 
   console.timeEnd("agentInfer");

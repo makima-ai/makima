@@ -61,10 +61,12 @@ export class OpenAIAdapter implements ModelAdapter {
     tools,
     recursive = true,
     signal,
+    format,
     onMessage,
   }: {
     model: string;
     messages: Message[];
+    format?: string;
     agent_name?: string;
     tools?: Tool[];
     recursive?: boolean;
@@ -82,6 +84,12 @@ export class OpenAIAdapter implements ModelAdapter {
         model: model,
         messages: omessages,
         tools: otools,
+        response_format:
+          format === "json"
+            ? {
+                type: "json_object",
+              }
+            : undefined,
       },
       { signal },
     );

@@ -59,11 +59,13 @@ export class OllamaAdapter implements ModelAdapter {
     tools,
     recursive = true,
     signal,
+    format,
     onMessage,
   }: {
     model: string;
     messages: Message[];
     agent_name?: string;
+    format?: string;
     tools?: Tool[];
     recursive?: boolean;
     signal?: AbortSignal;
@@ -75,6 +77,7 @@ export class OllamaAdapter implements ModelAdapter {
       messages: ollamaMessages,
       stream: false,
       tools: tools ? this.convertToolsToOllamaFormat(tools) : undefined,
+      format,
     };
 
     if (signal) {
