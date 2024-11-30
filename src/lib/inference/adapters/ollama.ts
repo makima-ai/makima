@@ -124,21 +124,25 @@ export class OllamaAdapter implements ModelAdapter {
     return outputMessage;
   }
 
+  private embedQueue: Promise<any> = Promise.resolve();
+
   async embed(params: {
     documents: Document[];
     model: string;
   }): Promise<Embedding[]> {
-    const oembeddings = await this.ollama.embed({
-      model: params.model,
-      input: params.documents.map((doc) => doc.content),
-    });
+    return (this.embedQueue = this.embedQueue.then(async () => {
+      const oembeddings = await this.ollama.embed({
+        model: params.model,
+        input: params.documents.map((doc) => doc.content),
+      });
 
-    const embeddings = oembeddings.embeddings.map((oembedding) => ({
-      model: params.model,
-      embeddings: [oembedding],
+      const embeddings = oembeddings.embeddings.map((oembedding) => ({
+        model: params.model,
+        embeddings: [oembedding],
+      }));
+
+      return embeddings;
     }));
-
-    return embeddings;
   }
 
   private convertMessageToOllamaFormat(message: Message): OllamaMessage {
