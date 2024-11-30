@@ -97,10 +97,20 @@ description: ${kb.description}`,
           parsed.query,
           Number(parsed.k),
         );
-        const filtered = results.map((result) => ({
-          content: result.content,
-          metadata: result.metadata,
-        }));
+        const filtered = results.map((result) => {
+          const words = result.content.split(" ");
+          const isOverLimit = words.length > 1000;
+          const limitedContent = words.slice(0, 1000).join(" ");
+          if (isOverLimit) {
+            console.log(
+              `Content was over 1000 word limit: ${words.length} words truncated to 1000`,
+            );
+          }
+          return {
+            content: limitedContent,
+            metadata: result.metadata,
+          };
+        });
         return JSON.stringify(filtered);
       } catch (error) {
         console.error("Error querying knowledge Base", error);
