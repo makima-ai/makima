@@ -124,25 +124,21 @@ export class OllamaAdapter implements ModelAdapter {
     return outputMessage;
   }
 
-  private embedQueue: Promise<any> = Promise.resolve();
-
   async embed(params: {
     documents: Document[];
     model: string;
   }): Promise<Embedding[]> {
-    return (this.embedQueue = this.embedQueue.then(async () => {
-      const oembeddings = await this.ollama.embed({
-        model: params.model,
-        input: params.documents.map((doc) => doc.content),
-      });
+    const oembeddings = await this.ollama.embed({
+      model: params.model,
+      input: params.documents.map((doc) => doc.content),
+    });
 
-      const embeddings = oembeddings.embeddings.map((oembedding) => ({
-        model: params.model,
-        embeddings: [oembedding],
-      }));
-
-      return embeddings;
+    const embeddings = oembeddings.embeddings.map((oembedding) => ({
+      model: params.model,
+      embeddings: [oembedding],
     }));
+
+    return embeddings;
   }
 
   private convertMessageToOllamaFormat(message: Message): OllamaMessage {
@@ -155,8 +151,8 @@ export class OllamaAdapter implements ModelAdapter {
           content: message.content as string,
           images: Array.isArray(message.content)
             ? message.content
-                .filter((c) => c.type === "image")
-                .map((c) => c.url)
+              .filter((c) => c.type === "image")
+              .map((c) => c.url)
             : undefined,
         };
       case "ai":

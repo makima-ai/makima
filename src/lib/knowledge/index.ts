@@ -103,6 +103,10 @@ export async function addDocumentToKnowledgeBase(
   document: Document,
   knowledgeBaseName: string,
 ) {
+  if (document.content.trim().length === 0) {
+    throw new Error("Document content cannot be empty");
+  }
+
   const kb = await getKnowledgeBaseByName(knowledgeBaseName);
   if (!kb) {
     throw new Error(`Knowledge base ${knowledgeBaseName} not found`);
