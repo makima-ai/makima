@@ -60,6 +60,7 @@ export interface KnowledgeProviderAdapter {
     filter: Record<string, string>,
   ): Promise<Static<typeof DatabaseDocument>[]>;
   delete(): Promise<void>;
+  reset(): Promise<void>;
   search(
     query: string,
     k: number,

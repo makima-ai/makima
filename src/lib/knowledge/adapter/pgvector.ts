@@ -221,6 +221,10 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
     return { id: result.rows[0].id };
   }
 
+  async reset(): Promise<void> {
+    await this.executeQuery(`TRUNCATE ${this.tableName}`);
+  }
+
   async search(
     query: string,
     k: number,

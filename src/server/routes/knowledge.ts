@@ -13,6 +13,7 @@ import {
   updateKnowledgeBase,
   searchKnowledgeBase,
   supported_database_providers,
+  resetKnowledgeBase,
 } from "../../lib/knowledge";
 import { Nullable } from "../../util-types";
 import {
@@ -233,6 +234,34 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
     async ({ params: { name }, error }) => {
       try {
         const result = await deleteKnowledgeBase(name);
+        return result;
+      } catch (err) {
+        return error(404, (err as Error).message);
+      }
+    },
+    {
+      params: t.Object({
+        name: t.String({ minLength: 4, maxLength: 255 }),
+      }),
+      response: {
+        200: t.Object({
+          message: t.String(),
+        }),
+        404: t.String(),
+      },
+      detail: {
+        summary: "Delete knowledge base",
+        description:
+          "Deletes the specified knowledge base and its associated data.",
+        tags: ["Knowledge Base"],
+      },
+    },
+  )
+  .delete(
+    "/:name/reset",
+    async ({ params: { name }, error }) => {
+      try {
+        const result = await resetKnowledgeBase(name);
         return result;
       } catch (err) {
         return error(404, (err as Error).message);

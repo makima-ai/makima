@@ -70,6 +70,18 @@ export async function deleteKnowledgeBase(knowledgeBaseName: string) {
   };
 }
 
+export async function resetKnowledgeBase(knowledgeBaseName: string) {
+  const kb = await getKnowledgeBaseByName(knowledgeBaseName);
+  if (!kb) {
+    throw new Error(`Knowledge base ${knowledgeBaseName} not found`);
+  }
+  const adapter = createKnowledgeBaseProviderAdapter(kb);
+  await adapter.reset();
+  return {
+    message: `Knowledge base ${knowledgeBaseName} reset successfully`,
+  };
+}
+
 export async function updateKnowledgeBase(
   knowledgeBaseName: string,
   updates: { embedding_model?: string; description?: string },
