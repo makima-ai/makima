@@ -5,10 +5,16 @@ import { env } from "../env";
 import serverTiming from "@elysiajs/server-timing";
 import { swagger } from "@elysiajs/swagger";
 import { knowledgeRoute } from "./routes/knowledge";
-import { logger } from "@bogeychan/elysia-logger";
+import { createPinoLogger, logger } from "@bogeychan/elysia-logger";
 
 const app = new Elysia();
 
+const log = createPinoLogger();
+
+app.onError((ctx) => {
+  log.error(ctx, ctx.error.name);
+  return "onError";
+});
 app.use(serverTiming());
 app.use(
   logger({
