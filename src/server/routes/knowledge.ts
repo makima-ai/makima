@@ -278,9 +278,9 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
         404: t.String(),
       },
       detail: {
-        summary: "Delete knowledge base",
+        summary: "Reset knowledge base",
         description:
-          "Deletes the specified knowledge base and its associated data.",
+          "Resets the specified knowledge base deleting all its document data.",
         tags: ["Knowledge Base"],
       },
     },
