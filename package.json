@@ -15,6 +15,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@bogeychan/elysia-logger": "^0.1.4",
     "@elysiajs/server-timing": "^1.1.0",
     "@elysiajs/swagger": "^1.1.6",
     "better-auth": "^0.8.4-beta.7",

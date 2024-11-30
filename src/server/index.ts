@@ -5,10 +5,17 @@ import { env } from "../env";
 import serverTiming from "@elysiajs/server-timing";
 import { swagger } from "@elysiajs/swagger";
 import { knowledgeRoute } from "./routes/knowledge";
+import { logger } from "@bogeychan/elysia-logger";
 
 const app = new Elysia();
 
 app.use(serverTiming());
+app.use(
+  logger({
+    level: "error",
+    autoLogging: true,
+  }),
+);
 app.get(
   "/",
   () => {
