@@ -173,6 +173,16 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
     const column_name = `embedding_${this.normalizeModelName(model)}`;
     console.log("Column name:", column_name);
 
+    // Check if column exists and create if not
+    const existingColumns = await this.getExistingColumns();
+    if (!existingColumns.includes(column_name)) {
+      const embeddingSize = await this.getEmbeddingSize(model);
+      await this.executeQuery(`
+        ALTER TABLE ${this.tableName}
+        ADD COLUMN ${column_name} vector(${embeddingSize})
+      `);
+    }
+
     const result = await this.executeQuery<{ id: string }>(
       `
       INSERT INTO ${this.tableName} (content, ${column_name}, metadata, model)
