@@ -201,6 +201,49 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
     return { id: result.rows[0].id };
   }
 
+  async addDocuments(documents: Document[]): Promise<{ id: string }[]> {
+    const model = documents[0].model || this.model;
+    const embeddings = await universalEmbed({
+      model: model,
+      documents: documents.map((doc) => ({
+        content: doc.content,
+        model: model,
+      })),
+    });
+
+    const column_name = `embedding_${this.normalizeModelName(model)}`;
+
+    const existingColumns = await this.getExistingColumns();
+    if (!existingColumns.includes(column_name)) {
+      const embeddingSize = await this.getEmbeddingSize(model);
+      await this.executeQuery(`
+        ALTER TABLE ${this.tableName}
+        ADD COLUMN ${column_name} vector(${embeddingSize})
+      `);
+    }
+
+    const result = await this.executeQuery<{ id: string }>(
+      `
+      INSERT INTO ${this.tableName} (content, ${column_name}, metadata, model)
+      VALUES ${documents
+        .map(
+          (_, index) =>
+            `($${index * 4 + 1}, $${index * 4 + 2}, $${index * 4 + 3}, $${index * 4 + 4})`,
+        )
+        .join(", ")}
+      RETURNING id
+    `,
+      documents.flatMap((doc, index) => [
+        doc.content,
+        pgvector.toSql(embeddings[index].embeddings[0]),
+        doc.metadata,
+        model,
+      ]),
+    );
+
+    return result.rows.map((row) => ({ id: row.id }));
+  }
+
   async updateDocument(
     document: Partial<Document> & { id: string },
   ): Promise<{ id: string }> {

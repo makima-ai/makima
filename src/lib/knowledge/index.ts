@@ -128,6 +128,39 @@ export async function addDocumentToKnowledgeBase(
   return result;
 }
 
+export async function addDocumentsToKnowledgeBase(
+  documents: Document[],
+  knowledgeBaseName: string,
+) {
+  for (let document of documents) {
+    if (document.content.trim().length === 0) {
+      throw new Error("Document content cannot be empty");
+    }
+  }
+
+  const kb = await getKnowledgeBaseByName(knowledgeBaseName);
+  if (!kb) {
+    throw new Error(`Knowledge base ${knowledgeBaseName} not found`);
+  }
+
+  const adapter = createKnowledgeBaseProviderAdapter(kb);
+
+  const result = await adapter.addDocuments(documents);
+
+  const models = documents.map((doc) => doc.model || kb.embedding_model);
+
+  const existingModels = await getKnowledgeBaseModels(knowledgeBaseName);
+
+  const newModels = Array.from(new Set([...existingModels, ...models]));
+  if (newModels.length > existingModels.length) {
+    await updateKnowledgeBaseOnDB(knowledgeBaseName, {
+      models: newModels,
+    });
+  }
+
+  return result;
+}
+
 export async function updateDocumentInKnowledgeBase(
   document: Partial<Document> & { id: string },
   knowledgeBaseName: string,

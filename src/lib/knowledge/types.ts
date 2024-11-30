@@ -52,6 +52,7 @@ export interface KnowledgeProviderAdapter {
   model: string;
   initialize(): Promise<void>;
   addDocument(document: Document): Promise<{ id: string }>;
+  addDocuments(document: Document[]): Promise<{ id: string }[]>;
   updateDocument(
     document: Partial<Document> & { id: string },
   ): Promise<{ id: string }>;

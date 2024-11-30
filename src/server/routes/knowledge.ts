@@ -14,6 +14,7 @@ import {
   searchKnowledgeBase,
   supported_database_providers,
   resetKnowledgeBase,
+  addDocumentsToKnowledgeBase,
 } from "../../lib/knowledge";
 import { Nullable } from "../../util-types";
 import {
@@ -128,6 +129,43 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
         200: t.Object({
           id: t.String(),
         }),
+        404: t.String(),
+      },
+
+      detail: {
+        summary: "Add document to knowledge base",
+        description: "Adds a new document to the specified knowledge base.",
+        tags: ["Knowledge Base"],
+      },
+    },
+  )
+  .post(
+    "/:name/add-documents",
+    async ({ params: { name }, body, error }) => {
+      try {
+        const result = await addDocumentsToKnowledgeBase(body, name);
+        return result;
+      } catch (err) {
+        return error(404, (err as Error).message);
+      }
+    },
+    {
+      params: t.Object({
+        name: t.String({ minLength: 4, maxLength: 255 }),
+      }),
+      body: t.Array(
+        t.Object({
+          content: t.String({ minLength: 1 }),
+          metadata: t.Optional(t.Record(t.String(), t.Any())),
+          model: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
+        }),
+      ),
+      response: {
+        200: t.Array(
+          t.Object({
+            id: t.String(),
+          }),
+        ),
         404: t.String(),
       },
 
