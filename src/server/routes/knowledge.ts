@@ -21,6 +21,7 @@ import {
   DatabaseDocument,
   SearchResultSchema,
 } from "../../lib/knowledge/types";
+import { logger } from "@bogeychan/elysia-logger";
 
 export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   .get(
@@ -287,6 +288,7 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
           message: t.String(),
         }),
         404: t.String(),
+        400: t.String(),
       },
       detail: {
         summary: "Delete knowledge base",
@@ -298,11 +300,12 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   )
   .delete(
     "/:name/reset",
-    async ({ params: { name }, error, log }) => {
+    async ({ params: { name }, error }) => {
       try {
         const result = await resetKnowledgeBase(name);
         return result;
       } catch (err) {
+        console.log(err);
         return error(404, (err as Error).message);
       }
     },
@@ -315,6 +318,7 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
           message: t.String(),
         }),
         404: t.String(),
+        400: t.String(),
       },
       detail: {
         summary: "Reset knowledge base",
