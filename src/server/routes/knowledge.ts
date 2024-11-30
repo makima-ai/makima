@@ -298,7 +298,7 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   )
   .delete(
     "/:name/reset",
-    async ({ params: { name }, error }) => {
+    async ({ params: { name }, error, log }) => {
       try {
         const result = await resetKnowledgeBase(name);
         return result;

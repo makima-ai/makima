@@ -13,7 +13,7 @@ const log = createPinoLogger();
 
 app.onError((ctx) => {
   log.error(ctx, ctx.error.name);
-  return "onError";
+  return ctx.error.message;
 });
 app.use(serverTiming());
 app.use(
