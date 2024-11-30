@@ -170,8 +170,9 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
       },
 
       detail: {
-        summary: "Add document to knowledge base",
-        description: "Adds a new document to the specified knowledge base.",
+        summary: "Add multiple documents to knowledge base",
+        description:
+          "Adds a multiple new documents to the specified knowledge base.",
         tags: ["Knowledge Base"],
       },
     },
