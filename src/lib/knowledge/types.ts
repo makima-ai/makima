@@ -42,7 +42,7 @@ export const SearchResultSchema = t.Object({
   id: t.String(),
   content: t.String(),
   model: t.String(),
-  metadata: t.Optional(t.Record(t.String(), t.Any())),
+  metadata: Nullable(t.Optional(t.Record(t.String(), t.Any()))),
   similarity: t.Number(),
 });
 
