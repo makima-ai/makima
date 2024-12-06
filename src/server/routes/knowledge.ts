@@ -368,8 +368,14 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
     "/:name/search",
     async ({ params: { name }, query, error }) => {
       try {
-        const { q, k, model } = query;
-        const results = await searchKnowledgeBase(name, q, parseInt(k), model);
+        const { q, k, model, similarity_threshold } = query;
+        const results = await searchKnowledgeBase(
+          name,
+          q,
+          parseInt(k),
+          model,
+          similarity_threshold,
+        );
         return results;
       } catch (err) {
         return error(404, (err as Error).message);
@@ -383,6 +389,7 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
         q: t.String({ minLength: 1 }),
         k: t.String({ pattern: "^[0-9]+$" }),
         model: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
+        similarity_threshold: t.Optional(t.Number({ minimum: 0, maximum: 1 })),
       }),
       response: {
         200: t.Array(SearchResultSchema),

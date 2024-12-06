@@ -212,11 +212,12 @@ export async function searchKnowledgeBase(
   query: string,
   k: number,
   modelFilter?: string,
+  similarityThreshold?: number,
 ): Promise<SearchResult[]> {
   const kb = await getKnowledgeBaseByName(knowledgeBaseName);
   if (!kb) {
     throw new Error(`Knowledge base ${knowledgeBaseName} not found`);
   }
   const adapter = createKnowledgeBaseProviderAdapter(kb);
-  return adapter.search(query, k, modelFilter);
+  return adapter.search(query, k, modelFilter, similarityThreshold);
 }

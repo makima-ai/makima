@@ -282,6 +282,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
     query: string,
     k: number,
     modelFilter?: string,
+    similarityThreshold: number = 0.1,
   ): Promise<SearchResult[]> {
     const searchModel = modelFilter || this.model;
     console.debug("Search model:", searchModel);
@@ -296,12 +297,15 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
       `
       SELECT id, content, model, metadata, 
         1 - (${embeddingColumn} <=> $1) as similarity
-      FROM ${this.tableName}
-      WHERE model = $2 AND 1 - (${embeddingColumn} <=> $1) > 0.1
+      WHERE model = $2 AND 1 - (${embeddingColumn} <=> $1) > $4
       ORDER BY ${embeddingColumn} <-> $1
-      LIMIT $3
-    `,
-      [pgvector.toSql(queryEmbedding.embeddings[0]), searchModel, k],
+      LIMIT $3`,
+      [
+        pgvector.toSql(queryEmbedding.embeddings[0]),
+        searchModel,
+        k,
+        similarityThreshold,
+      ],
     );
 
     console.debug("Search results:", result.rows);
@@ -320,7 +324,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
       `
       DELETE FROM ${this.tableName}
       WHERE id = $1
-    `,
+      `,
       [documentId],
     );
   }
@@ -329,14 +333,14 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
     filter: Record<string, string>,
   ): Promise<Static<typeof DatabaseDocument>[]> {
     const conditions = Object.entries(filter)
-      .map(([key], index) => `metadata->>'${key}' = $${index + 1}`)
+      .map(([key], index) => `metadata ->> '${key}' = $${index + 1}`)
       .join(" AND ");
 
     const query = `
       SELECT id, content, model, metadata
       FROM ${this.tableName}
       ${conditions ? `WHERE ${conditions}` : ""}
-    `;
+`;
 
     const result = await this.executeQuery<DocumentRow>(
       query,
@@ -353,7 +357,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
   }
 
   async delete(): Promise<void> {
-    await this.executeQuery(`DROP TABLE IF EXISTS ${this.tableName}`);
+    await this.executeQuery(`DROP TABLE IF EXISTS ${this.tableName} `);
   }
 
   private async executeQuery<T extends QueryResultRow>(

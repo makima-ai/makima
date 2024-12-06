@@ -66,5 +66,6 @@ export interface KnowledgeProviderAdapter {
     query: string,
     k: number,
     modelFilter?: string,
+    similarityThreshold?: number,
   ): Promise<SearchResult[]>;
 }
