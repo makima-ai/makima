@@ -353,7 +353,7 @@ export class PGVectorAdapter implements KnowledgeProviderAdapter {
       id: row.id as string,
       content: row.content as string,
       model: row.model as string,
-      metadata: row.metadata as Record<string, unknown>,
+      metadata: (row.metadata || {}) as Record<string, unknown>,
       createdAt: row.created_at as Date,
     }));
   }
