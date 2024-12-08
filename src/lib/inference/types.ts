@@ -5,8 +5,8 @@ import type {
   messagesTable,
 } from "../../db/schema";
 import type { Embedding, Document, KnowledgeBase } from "../knowledge/types";
-import type { DbTool } from "../thread/tool";
 import type { JsonSchema7Type } from "zod-to-json-schema";
+import type { DbTool } from "../tools";
 
 export type MessageContent = string | (ImageContent | AudioContent)[];
 

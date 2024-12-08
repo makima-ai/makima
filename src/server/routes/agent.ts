@@ -20,8 +20,8 @@ import {
   removeKnowledgeBaseFromAgentByName,
 } from "../../db/agent-knowledge";
 import { getKnowledgeBaseByName } from "../../db/knowledge";
-import { agentInfer } from "../../lib/thread/agent";
 import type { UserMessage } from "../../lib/inference/types";
+import { agentInfer } from "../../lib/agent";
 
 export const agentRoute = new Elysia({ prefix: "/agent" })
   .get(

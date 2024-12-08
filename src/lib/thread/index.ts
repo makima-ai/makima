@@ -1,9 +1,5 @@
 import { getAgentById, getAgentByName, getAgentTools } from "../../db/agent";
-import {
-  getThreadDetailsById,
-  addMessagesToThread,
-  getScaledMessages,
-} from "../../db/thread";
+import { getThreadDetailsById, addMessagesToThread } from "../../db/thread";
 import { universalInfer } from "../inference";
 import type {
   UserMessage,
@@ -16,7 +12,8 @@ import {
   createToolFromDb,
   createToolFromKB,
   type DbTool,
-} from "./tool";
+} from "../tools";
+import { getScaledMessages } from "./scale";
 
 export async function threadInfer({
   threadId,

@@ -7,11 +7,11 @@ import type {
   SystemMessage,
 } from "../inference/types";
 import {
-  createToolFromAgent,
-  createToolFromDb,
   createToolFromKB,
+  createToolFromAgent,
   type DbTool,
-} from "./tool";
+  createToolFromDb,
+} from "../tools";
 
 export async function agentInfer({
   agentName,
