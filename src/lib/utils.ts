@@ -1,3 +1,5 @@
+import { createPinoLogger } from "@bogeychan/elysia-logger";
+
 // i love golang
 export async function handle<T>(
   promise: Promise<T>,
@@ -9,3 +11,5 @@ export async function handle<T>(
     return [null, error as Error];
   }
 }
+
+export const log = createPinoLogger();

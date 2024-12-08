@@ -11,12 +11,17 @@ import {
 } from "../../db/thread";
 import type { UserMessage } from "../../lib/inference/types";
 import { threadInfer } from "../../lib/thread";
+import { handle, log } from "../../lib/utils";
 
 export const threadRoute = new Elysia({ prefix: "/thread" })
   .get(
     "/",
-    async () => {
-      const threads = await listAllThreads();
+    async ({ error }) => {
+      const [threads, err] = await handle(listAllThreads());
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error getting threads");
+      }
       return threads;
     },
     {
@@ -27,12 +32,14 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       },
     },
   )
-
-  // Get thread details by ID
   .get(
     "/:id",
     async ({ params: { id }, error }) => {
-      const threadDetails = await getThreadDetailsById(id);
+      const [threadDetails, err] = await handle(getThreadDetailsById(id));
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error getting thread details");
+      }
       if (!threadDetails) {
         return error(404, "Thread not found");
       }
@@ -49,11 +56,14 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       },
     },
   )
-  // Get messages of a thread by ID
   .get(
     "/:id/messages",
-    async ({ params: { id } }) => {
-      const messages = await getMessagesByThreadId(id);
+    async ({ params: { id }, error }) => {
+      const [messages, err] = await handle(getMessagesByThreadId(id));
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error getting thread messages");
+      }
       return messages;
     },
     {
@@ -67,28 +77,24 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       },
     },
   )
-  // Create a new thread
   .post(
     "/create",
-    async ({ body }) => {
-      const {
-        platform,
-        description,
-        authors,
-        id,
-        agentName,
-        scalingAlgorithm,
-        scalingConfig,
-      } = body;
-      const newThread = await createThread({
-        id,
-        platform,
-        description,
-        authors,
-        agentName,
-        scalingAlgorithm,
-        scalingConfig,
-      });
+    async ({ body, error }) => {
+      const [newThread, err] = await handle(
+        createThread({
+          id: body.id,
+          platform: body.platform,
+          description: body.description,
+          authors: body.authors,
+          agentName: body.agentName,
+          scalingAlgorithm: body.scalingAlgorithm,
+          scalingConfig: body.scalingConfig,
+        }),
+      );
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error creating thread");
+      }
       return newThread;
     },
     {
@@ -135,20 +141,20 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       },
     },
   )
-  // Add a message to a thread
   .post(
     "/:id/message",
-    async ({ params: { id }, body }) => {
-      const { content, authorId } = body;
-      const role = "human";
-      if (!role || !content || !authorId) {
-        return { error: "Invalid input data" };
+    async ({ params: { id }, body, error }) => {
+      const [addedMessage, err] = await handle(
+        addMessageToThread(id, {
+          role: "human",
+          content: body.content,
+          name: body.authorId,
+        }),
+      );
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error adding message to thread");
       }
-      const addedMessage = await addMessageToThread(id, {
-        role,
-        content,
-        name: authorId,
-      });
       return addedMessage;
     },
     {
@@ -157,7 +163,6 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       }),
       body: t.Object({
         callId: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
-        // role: t.Union([t.Literal("human")]),
         name: t.String({ minLength: 4, maxLength: 255 }),
         content: t.String({ minLength: 1 }),
         authorId: t.String({ minLength: 4, maxLength: 255 }),
@@ -165,21 +170,25 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       detail: {
         summary: "Add a message to a thread",
         description:
-          "Adds a message to a thread with the provided details such as role, content, and author ID along with the thread ID on which the message should be added.",
+          "Adds a message to a thread with the provided details such as role, content, and author ID.",
         tags: ["Threads"],
       },
     },
   )
-  // Thread inference (chat)
   .post(
     "/:id/chat",
-    async ({ params: { id }, body }) => {
-      const { agentName, message } = body;
-      const result = await threadInfer({
-        threadId: id,
-        agentName,
-        newMessage: message as UserMessage,
-      });
+    async ({ params: { id }, body, error }) => {
+      const [result, err] = await handle(
+        threadInfer({
+          threadId: id,
+          agentName: body.agentName,
+          newMessage: body.message as UserMessage,
+        }),
+      );
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error performing thread inference");
+      }
       return result;
     },
     {
@@ -228,17 +237,20 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       detail: {
         summary: "Thread inference (chat)",
         description:
-          "Performs inference on a thread with the provided message and agent name along with the thread ID on which the inference should be performed.",
+          "Performs inference on a thread with the provided message and agent name.",
         tags: ["Threads"],
       },
     },
   )
-  // Delete a thread
   .delete(
     "/:id",
     async ({ params: { id }, error }) => {
-      const result = await deleteThread(id);
-      if (!result.success) {
+      const [result, err] = await handle(deleteThread(id));
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error deleting thread");
+      }
+      if (!result?.success) {
         return error(404, "Thread not found");
       }
       return {
@@ -252,18 +264,21 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       }),
       detail: {
         summary: "Delete a thread",
-        description:
-          "Deletes a thread by its ID along with all the messages associated with it and returns the deleted messages count.",
+        description: "Deletes a thread by its ID along with all its messages.",
         tags: ["Threads"],
       },
     },
   )
-  // Update thread's default agent
   .put(
     "/:id/agent",
     async ({ params: { id }, body, error }) => {
-      const { agentName } = body;
-      const updatedThread = await updateThreadAgent(id, agentName);
+      const [updatedThread, err] = await handle(
+        updateThreadAgent(id, body.agentName),
+      );
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error updating thread's agent");
+      }
       if (!updatedThread) {
         return error(404, "Thread not found or agent could not be updated");
       }
@@ -278,8 +293,7 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       }),
       detail: {
         summary: "Update thread's default agent",
-        description:
-          "Updates the default agent of a thread by its ID with the provided agent name , can retrun not found or agent could not be updated",
+        description: "Updates the default agent of a thread by its ID.",
         tags: ["Threads"],
       },
     },
@@ -287,20 +301,17 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
   .put(
     "/:id/scaling",
     async ({ params: { id }, body, error }) => {
-      const { scalingAlgorithm, scalingConfig } = body;
-
-      if (scalingAlgorithm && !scalingConfig) {
-        return error(
-          400,
-          "Scaling configuration is required with the algorithm",
-        );
-      }
-
-      const updatedThread = await updateThreadScaling(
-        id,
-        scalingAlgorithm || null,
-        scalingConfig || null,
+      const [updatedThread, err] = await handle(
+        updateThreadScaling(
+          id,
+          body.scalingAlgorithm || null,
+          body.scalingConfig || null,
+        ),
       );
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error updating thread scaling configuration");
+      }
       if (!updatedThread) {
         return error(404, "Thread not found or scaling could not be updated");
       }

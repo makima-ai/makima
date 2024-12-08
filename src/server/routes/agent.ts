@@ -1,13 +1,9 @@
-import { Elysia, t } from "elysia";
+import { Elysia, error, t } from "elysia";
 import {
   createAgent,
   updateAgent,
   deleteAgent,
-  createTool,
-  updateTool,
-  deleteTool,
   listAllAgents,
-  listAllTools,
   getToolByName,
   getAgentByName,
   addToolToAgentByName,
@@ -22,12 +18,17 @@ import {
 import { getKnowledgeBaseByName } from "../../db/knowledge";
 import type { UserMessage } from "../../lib/inference/types";
 import { agentInfer } from "../../lib/agent";
+import { handle, log } from "../../lib/utils";
 
 export const agentRoute = new Elysia({ prefix: "/agent" })
   .get(
     "/",
     async () => {
-      const agents = await listAllAgents();
+      const [agents, err] = await handle(listAllAgents());
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error getting agents");
+      }
       return agents;
     },
     {
@@ -43,7 +44,11 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   .get(
     "/:name",
     async ({ params: { name }, error }) => {
-      const agent = await getAgentByName(name);
+      const [agent, err] = await handle(getAgentByName(name));
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error getting agent");
+      }
       if (!agent) {
         return error(404, "Agent not found");
       }
@@ -69,7 +74,11 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   .post(
     "/create",
     async ({ body }) => {
-      const newAgent = await createAgent(body);
+      const [newAgent, err] = await handle(createAgent(body));
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error creating agent");
+      }
       return newAgent;
     },
     {
@@ -94,7 +103,11 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   .put(
     "/:name",
     async ({ params: { name }, body, error }) => {
-      const updatedAgent = await updateAgent(name, body);
+      const [updatedAgent, err] = await handle(updateAgent(name, body));
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error updating agent");
+      }
       if (!updatedAgent) {
         return error(404, "Agent not found");
       }
@@ -125,7 +138,11 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   .delete(
     "/:name",
     async ({ params: { name }, error }) => {
-      const deletedAgent = await deleteAgent(name);
+      const [deletedAgent, err] = await handle(deleteAgent(name));
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error deleting agent");
+      }
       if (!deletedAgent) {
         return error(404, "Agent not found");
       }
@@ -149,10 +166,16 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
     "/:agentName/chat",
     async ({ params: { agentName }, body }) => {
       const message = body;
-      const result = await agentInfer({
-        agentName,
-        newMessage: message as UserMessage,
-      });
+      const [result, err] = await handle(
+        agentInfer({
+          agentName,
+          newMessage: message as UserMessage,
+        }),
+      );
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error during agent inference");
+      }
       return result;
     },
     {
@@ -208,22 +231,31 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   .post(
     "/:agentName/add-helper/:helperAgentName",
     async ({ params: { agentName, helperAgentName }, error }) => {
-      const [agent, helperAgent] = await Promise.all([
-        getAgentByName(agentName),
-        getAgentByName(helperAgentName),
-      ]);
-
+      const [agent, err1] = await handle(getAgentByName(agentName));
+      if (err1) {
+        log.error(err1.message);
+        return error(500, "Error getting agent");
+      }
       if (!agent) {
         return error(404, "Agent not found");
+      }
+
+      const [helperAgent, err2] = await handle(getAgentByName(helperAgentName));
+      if (err2) {
+        log.error(err2.message);
+        return error(500, "Error getting helper agent");
       }
       if (!helperAgent) {
         return error(404, "Helper agent not found");
       }
 
-      const updatedAgent = await addHelperAgentByName(
-        agentName,
-        helperAgentName,
+      const [updatedAgent, err3] = await handle(
+        addHelperAgentByName(agentName, helperAgentName),
       );
+      if (err3) {
+        log.error(err3.message);
+        return error(500, "Error adding helper agent");
+      }
       return updatedAgent;
     },
     {
@@ -244,22 +276,34 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   .post(
     "/:agentName/remove-helper/:helperAgentName",
     async ({ params: { agentName, helperAgentName }, error }) => {
-      const [agent, helperAgent] = await Promise.all([
-        getAgentByName(agentName),
-        getAgentByName(helperAgentName),
+      const [[agent, err1], [helperAgent, err2]] = await Promise.all([
+        handle(getAgentByName(agentName)),
+        handle(getAgentByName(helperAgentName)),
       ]);
 
+      if (err1) {
+        log.error(err1.message);
+        return error(500, "Error getting agent");
+      }
       if (!agent) {
         return error(404, "Agent not found");
+      }
+
+      if (err2) {
+        log.error(err2.message);
+        return error(500, "Error getting helper agent");
       }
       if (!helperAgent) {
         return error(404, "Helper agent not found");
       }
 
-      const updatedAgent = await removeHelperAgentByName(
-        agentName,
-        helperAgentName,
+      const [updatedAgent, err3] = await handle(
+        removeHelperAgentByName(agentName, helperAgentName),
       );
+      if (err3) {
+        log.error(err3.message);
+        return error(500, "Error removing helper agent");
+      }
       return updatedAgent;
     },
     {
@@ -279,18 +323,34 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   .post(
     "/:agentName/add-tool/:toolName",
     async ({ params: { agentName, toolName }, error }) => {
-      const agent = await getAgentByName(agentName);
+      const [[agent, err1], [tool, err2]] = await Promise.all([
+        handle(getAgentByName(agentName)),
+        handle(getToolByName(toolName)),
+      ]);
+
+      if (err1) {
+        log.error(err1.message);
+        return error(500, "Error getting agent");
+      }
       if (!agent) {
         return error(404, "Agent not found");
       }
 
-      const tool = await getToolByName(toolName);
-
+      if (err2) {
+        log.error(err2.message);
+        return error(500, "Error getting tool");
+      }
       if (!tool) {
         return error(404, "Tool not found");
       }
 
-      const updatedAgent = await addToolToAgentByName(agentName, toolName);
+      const [updatedAgent, err3] = await handle(
+        addToolToAgentByName(agentName, toolName),
+      );
+      if (err3) {
+        log.error(err3.message);
+        return error(500, "Error adding tool to agent");
+      }
       return updatedAgent;
     },
     {
@@ -311,17 +371,34 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   .post(
     "/:agentName/remove-tool/:toolName",
     async ({ params: { agentName, toolName }, error }) => {
-      const agent = await getAgentByName(agentName);
+      const [[agent, err1], [tool, err2]] = await Promise.all([
+        handle(getAgentByName(agentName)),
+        handle(getToolByName(toolName)),
+      ]);
+
+      if (err1) {
+        log.error(err1.message);
+        return error(500, "Error getting agent");
+      }
       if (!agent) {
         return error(404, "Agent not found");
       }
 
-      const tool = await getToolByName(toolName);
+      if (err2) {
+        log.error(err2.message);
+        return error(500, "Error getting tool");
+      }
       if (!tool) {
         return error(404, "Tool not found");
       }
 
-      const updatedAgent = await removeToolFromAgentByName(agentName, toolName);
+      const [updatedAgent, err3] = await handle(
+        removeToolFromAgentByName(agentName, toolName),
+      );
+      if (err3) {
+        log.error(err3.message);
+        return error(500, "Error removing tool from agent");
+      }
       return updatedAgent;
     },
     {
@@ -340,20 +417,34 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   .post(
     "/:agentName/add-knowledge-base/:knowledgeBaseName",
     async ({ params: { agentName, knowledgeBaseName }, error }) => {
-      const agent = await getAgentByName(agentName);
+      const [[agent, err1], [knowledgeBase, err2]] = await Promise.all([
+        handle(getAgentByName(agentName)),
+        handle(getKnowledgeBaseByName(knowledgeBaseName)),
+      ]);
+
+      if (err1) {
+        log.error(err1.message);
+        return error(500, "Error getting agent");
+      }
       if (!agent) {
         return error(404, "Agent not found");
       }
 
-      const knowledgeBase = await getKnowledgeBaseByName(knowledgeBaseName);
+      if (err2) {
+        log.error(err2.message);
+        return error(500, "Error getting knowledge base");
+      }
       if (!knowledgeBase) {
         return error(404, "Knowledge base not found");
       }
 
-      const updatedAgent = await addKnowledgeBaseToAgentByName(
-        agentName,
-        knowledgeBaseName,
+      const [updatedAgent, err3] = await handle(
+        addKnowledgeBaseToAgentByName(agentName, knowledgeBaseName),
       );
+      if (err3) {
+        log.error(err3.message);
+        return error(500, "Error adding knowledge base to agent");
+      }
       return updatedAgent;
     },
     {
@@ -374,20 +465,34 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
   .post(
     "/:agentName/remove-knowledge-base/:knowledgeBaseName",
     async ({ params: { agentName, knowledgeBaseName }, error }) => {
-      const agent = await getAgentByName(agentName);
+      const [[agent, err1], [knowledgeBase, err2]] = await Promise.all([
+        handle(getAgentByName(agentName)),
+        handle(getKnowledgeBaseByName(knowledgeBaseName)),
+      ]);
+
+      if (err1) {
+        log.error(err1.message);
+        return error(500, "Error getting agent");
+      }
       if (!agent) {
         return error(404, "Agent not found");
       }
 
-      const knowledgeBase = await getKnowledgeBaseByName(knowledgeBaseName);
+      if (err2) {
+        log.error(err2.message);
+        return error(500, "Error getting knowledge base");
+      }
       if (!knowledgeBase) {
         return error(404, "Knowledge base not found");
       }
 
-      const updatedAgent = await removeKnowledgeBaseFromAgentByName(
-        agentName,
-        knowledgeBaseName,
+      const [updatedAgent, err3] = await handle(
+        removeKnowledgeBaseFromAgentByName(agentName, knowledgeBaseName),
       );
+      if (err3) {
+        log.error(err3.message);
+        return error(500, "Error removing knowledge base from agent");
+      }
       return updatedAgent;
     },
     {
@@ -400,122 +505,6 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         description:
           "Removes a knowledge base from an agent by the agent name and knowledge base name. This operation is used to disassociate a knowledge base from an agent.",
         tags: ["Agent"],
-      },
-    },
-  );
-
-export const toolRoute = new Elysia({ prefix: "/tool" })
-  .get(
-    "/",
-    async () => {
-      const tools = await listAllTools();
-      return tools;
-    },
-    {
-      detail: {
-        summary: "Get all tools",
-        description:
-          "Get all tools in the system and their details such as name, description, endpoint, method, and parameters.",
-        tags: ["Tool"],
-      },
-    },
-  )
-  // Get tool by name
-  .get(
-    "/:name",
-    async ({ params: { name }, error }) => {
-      const tool = await getToolByName(name);
-      if (!tool) {
-        return error(404, "Tool not found");
-      }
-      return tool;
-    },
-    {
-      params: t.Object({
-        name: t.String({ minLength: 4, maxLength: 255 }),
-      }),
-      detail: {
-        summary: "Get tool by name",
-        description:
-          "Gets the details of a tool by its name. This response includes the tool details such as name, description, endpoint, method, and parameters.",
-        tags: ["Tool"],
-      },
-    },
-  )
-
-  // Create a new tool
-  .post(
-    "/create",
-    async ({ body }) => {
-      const newTool = await createTool(body);
-      return newTool;
-    },
-    {
-      body: t.Object({
-        name: t.String({ minLength: 4, maxLength: 255 }),
-        description: t.Optional(t.String({ maxLength: 255 })),
-        params: t.Optional(t.Any()),
-        endpoint: t.String({ minLength: 4 }),
-        method: t.String({ minLength: 1 }),
-      }),
-      detail: {
-        summary: "Create a new tool",
-        description:
-          "Creates a new tool with the provided details. The tool details include the tool name, description, parameters, endpoint, and method. These details are required to create a new tool.",
-        tags: ["Tool"],
-      },
-    },
-  )
-
-  // Update a tool
-  .put(
-    "/:name",
-    async ({ params: { name }, body, error }) => {
-      const updatedTool = await updateTool(name, body);
-      if (!updatedTool) {
-        return error(404, "Tool not found");
-      }
-      return updatedTool;
-    },
-    {
-      params: t.Object({
-        name: t.String({ minLength: 4, maxLength: 255 }),
-      }),
-      body: t.Object({
-        name: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
-        description: t.Optional(t.String({ maxLength: 255 })),
-        params: t.Optional(t.Any()),
-        endpoint: t.Optional(t.String({ minLength: 4 })),
-        method: t.Optional(t.String({ minLength: 1 })),
-      }),
-      detail: {
-        summary: "Update a tool by name",
-        description:
-          "Updates the details of an existing tool by its name. The tool details include the tool name, description, parameters, endpoint, and method. These details are required to update an existing tool. whatever different details are provided will be updated.",
-        tags: ["Tool"],
-      },
-    },
-  )
-
-  // Delete a tool
-  .delete(
-    "/:name",
-    async ({ params: { name }, error }) => {
-      const deletedTool = await deleteTool(name);
-      if (!deletedTool) {
-        return error(404, "Tool not found");
-      }
-      return { message: "Tool deleted successfully" };
-    },
-    {
-      params: t.Object({
-        name: t.String({ minLength: 4, maxLength: 255 }),
-      }),
-      detail: {
-        summary: "Delete a tool by name",
-        description:
-          "Deletes a tool by its name. This operation is irreversible and will delete all the details associated with the tool.",
-        tags: ["Tool"],
       },
     },
   );

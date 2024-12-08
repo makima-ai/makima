@@ -16,29 +16,20 @@ import {
   resetKnowledgeBase,
   addDocumentsToKnowledgeBase,
 } from "../../lib/knowledge";
-import { Nullable } from "../../util-types";
-import {
-  DatabaseDocument,
-  SearchResultSchema,
-} from "../../lib/knowledge/types";
-import { logger } from "@bogeychan/elysia-logger";
+import { handle, log } from "../../lib/utils";
 
 export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   .get(
     "/",
-    async () => {
-      const knowledgeBases = await listAllKnowledgeBases();
+    async ({ error }) => {
+      const [knowledgeBases, err] = await handle(listAllKnowledgeBases());
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error retrieving knowledge bases");
+      }
       return knowledgeBases;
     },
     {
-      response: t.Array(
-        t.Object({
-          name: t.String(),
-          description: Nullable(t.Optional(t.String())),
-          embedding_model: t.String(),
-          database_provider: t.String(),
-        }),
-      ),
       detail: {
         summary: "Get all knowledge bases",
         description:
@@ -50,7 +41,11 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   .get(
     "/:name",
     async ({ params: { name }, error }) => {
-      const knowledgeBase = await getKnowledgeBaseByName(name);
+      const [knowledgeBase, err] = await handle(getKnowledgeBaseByName(name));
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error retrieving knowledge base");
+      }
       if (!knowledgeBase) {
         return error(404, "Knowledge base not found");
       }
@@ -60,16 +55,6 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
       params: t.Object({
         name: t.String({ minLength: 4, maxLength: 255 }),
       }),
-      response: {
-        404: t.String(),
-        200: t.Object({
-          name: t.String(),
-          description: Nullable(t.Optional(t.String())),
-          embedding_model: t.String(),
-          database_provider: t.String(),
-          createdAt: t.Date(),
-        }),
-      },
       detail: {
         summary: "Get knowledge base by name",
         description: "Gets the details of a knowledge base by its name.",
@@ -79,8 +64,12 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   )
   .post(
     "/create",
-    async ({ body }) => {
-      const newKnowledgeBase = await createKnowledgeBase(body);
+    async ({ body, error }) => {
+      const [newKnowledgeBase, err] = await handle(createKnowledgeBase(body));
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error creating knowledge base");
+      }
       return newKnowledgeBase;
     },
     {
@@ -95,11 +84,6 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
           },
         ),
       }),
-      response: {
-        200: t.Object({
-          id: t.String(),
-        }),
-      },
       detail: {
         summary: "Create a new knowledge base",
         description: "Creates a new knowledge base with the provided details.",
@@ -110,12 +94,14 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   .post(
     "/:name/add-document",
     async ({ params: { name }, body, error }) => {
-      try {
-        const result = await addDocumentToKnowledgeBase(body, name);
-        return result;
-      } catch (err) {
-        return error(404, (err as Error).message);
+      const [result, err] = await handle(
+        addDocumentToKnowledgeBase(body, name),
+      );
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error adding document to knowledge base");
       }
+      return result;
     },
     {
       params: t.Object({
@@ -126,13 +112,6 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
         metadata: t.Optional(t.Record(t.String(), t.Any())),
         model: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
       }),
-      response: {
-        200: t.Object({
-          id: t.String(),
-        }),
-        404: t.String(),
-      },
-
       detail: {
         summary: "Add document to knowledge base",
         description: "Adds a new document to the specified knowledge base.",
@@ -143,12 +122,14 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   .post(
     "/:name/add-documents",
     async ({ params: { name }, body, error }) => {
-      try {
-        const result = await addDocumentsToKnowledgeBase(body, name);
-        return result;
-      } catch (err) {
-        return error(404, (err as Error).message);
+      const [result, err] = await handle(
+        addDocumentsToKnowledgeBase(body, name),
+      );
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error adding documents to knowledge base");
       }
+      return result;
     },
     {
       params: t.Object({
@@ -161,19 +142,10 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
           model: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
         }),
       ),
-      response: {
-        200: t.Array(
-          t.Object({
-            id: t.String(),
-          }),
-        ),
-        404: t.String(),
-      },
-
       detail: {
         summary: "Add multiple documents to knowledge base",
         description:
-          "Adds a multiple new documents to the specified knowledge base.",
+          "Adds multiple new documents to the specified knowledge base.",
         tags: ["Knowledge Base"],
       },
     },
@@ -181,12 +153,14 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   .put(
     "/:name/update-document",
     async ({ params: { name }, body, error }) => {
-      try {
-        const result = await updateDocumentInKnowledgeBase(body, name);
-        return result;
-      } catch (err) {
-        return error(404, (err as Error).message);
+      const [result, err] = await handle(
+        updateDocumentInKnowledgeBase(body, name),
+      );
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error updating document in knowledge base");
       }
+      return result;
     },
     {
       params: t.Object({
@@ -197,12 +171,6 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
         content: t.Optional(t.String({ minLength: 1 })),
         metadata: t.Optional(t.Record(t.String(), t.Any())),
       }),
-      response: {
-        200: t.Object({
-          id: t.String(),
-        }),
-        404: t.String(),
-      },
       detail: {
         summary: "Update document in knowledge base",
         description:
@@ -214,24 +182,20 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   .delete(
     "/:name/remove-document/:documentId",
     async ({ params: { name, documentId }, error }) => {
-      try {
-        await removeDocumentFromKnowledgeBase(documentId, name);
-        return { message: "Document removed successfully" };
-      } catch (err) {
-        return error(404, (err as Error).message);
+      const [_, err] = await handle(
+        removeDocumentFromKnowledgeBase(documentId, name),
+      );
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error removing document from knowledge base");
       }
+      return { message: "Document removed successfully" };
     },
     {
       params: t.Object({
         name: t.String({ minLength: 4, maxLength: 255 }),
         documentId: t.String({ minLength: 1 }),
       }),
-      response: {
-        200: t.Object({
-          message: t.String(),
-        }),
-        404: t.String(),
-      },
       detail: {
         summary: "Remove document from knowledge base",
         description: "Removes a document from the specified knowledge base.",
@@ -242,25 +206,19 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   .get(
     "/:name/documents",
     async ({ params: { name }, query, error }) => {
-      try {
-        const documents = await getDocumentsFromKnowledgeBase(
-          query as Record<string, string>,
-          name,
-        );
-        return documents;
-      } catch (err) {
-        return error(404, (err as Error).message);
+      const [documents, err] = await handle(
+        getDocumentsFromKnowledgeBase(query as Record<string, string>, name),
+      );
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error retrieving documents from knowledge base");
       }
+      return documents;
     },
     {
       params: t.Object({
         name: t.String({ minLength: 4, maxLength: 255 }),
       }),
-      response: {
-        200: t.Array(DatabaseDocument),
-        404: t.String(),
-      },
-      query: t.Object({}),
       detail: {
         summary: "Get documents from knowledge base",
         description:
@@ -272,24 +230,17 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   .delete(
     "/:name",
     async ({ params: { name }, error }) => {
-      try {
-        const result = await deleteKnowledgeBase(name);
-        return result;
-      } catch (err) {
-        return error(404, (err as Error).message);
+      const [result, err] = await handle(deleteKnowledgeBase(name));
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error deleting knowledge base");
       }
+      return result;
     },
     {
       params: t.Object({
         name: t.String({ minLength: 4, maxLength: 255 }),
       }),
-      response: {
-        200: t.Object({
-          message: t.String(),
-        }),
-        404: t.String(),
-        400: t.String(),
-      },
       detail: {
         summary: "Delete knowledge base",
         description:
@@ -301,25 +252,17 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   .delete(
     "/:name/reset",
     async ({ params: { name }, error }) => {
-      try {
-        const result = await resetKnowledgeBase(name);
-        return result;
-      } catch (err) {
-        console.log(err);
-        return error(404, (err as Error).message);
+      const [result, err] = await handle(resetKnowledgeBase(name));
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error resetting knowledge base");
       }
+      return result;
     },
     {
       params: t.Object({
         name: t.String({ minLength: 4, maxLength: 255 }),
       }),
-      response: {
-        200: t.Object({
-          message: t.String(),
-        }),
-        404: t.String(),
-        400: t.String(),
-      },
       detail: {
         summary: "Reset knowledge base",
         description:
@@ -331,12 +274,12 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   .put(
     "/:name",
     async ({ params: { name }, body, error }) => {
-      try {
-        const result = await updateKnowledgeBase(name, body);
-        return result;
-      } catch (err) {
-        return error(404, (err as Error).message);
+      const [result, err] = await handle(updateKnowledgeBase(name, body));
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error updating knowledge base");
       }
+      return result;
     },
     {
       params: t.Object({
@@ -346,16 +289,6 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
         embedding_model: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
         description: t.Optional(t.String({ maxLength: 255 })),
       }),
-      response: {
-        200: t.Object({
-          name: t.String(),
-          description: Nullable(t.Optional(t.String())),
-          embedding_model: t.String(),
-          database_provider: t.String(),
-          createdAt: t.Date(),
-        }),
-        404: t.String(),
-      },
       detail: {
         summary: "Update knowledge base",
         description:
@@ -367,19 +300,15 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
   .get(
     "/:name/search",
     async ({ params: { name }, query, error }) => {
-      try {
-        const { q, k, model, similarity_threshold } = query;
-        const results = await searchKnowledgeBase(
-          name,
-          q,
-          parseInt(k),
-          model,
-          similarity_threshold,
-        );
-        return results;
-      } catch (err) {
-        return error(404, (err as Error).message);
+      const { q, k, model, similarity_threshold } = query;
+      const [results, err] = await handle(
+        searchKnowledgeBase(name, q, parseInt(k), model, similarity_threshold),
+      );
+      if (err) {
+        log.error(err.message);
+        return error(500, "Error searching knowledge base");
       }
+      return results;
     },
     {
       params: t.Object({
@@ -391,10 +320,6 @@ export const knowledgeRoute = new Elysia({ prefix: "/knowledge" })
         model: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
         similarity_threshold: t.Optional(t.Number({ minimum: 0, maximum: 1 })),
       }),
-      response: {
-        200: t.Array(SearchResultSchema),
-        404: t.String(),
-      },
       detail: {
         summary: "Search knowledge base",
         description:

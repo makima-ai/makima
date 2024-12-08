@@ -1,20 +1,28 @@
 import { Elysia } from "elysia";
 import { threadRoute } from "./routes/thread";
-import { agentRoute, toolRoute } from "./routes/agent";
+import { agentRoute } from "./routes/agent";
 import { env } from "../env";
 import serverTiming from "@elysiajs/server-timing";
 import { swagger } from "@elysiajs/swagger";
 import { knowledgeRoute } from "./routes/knowledge";
-import { createPinoLogger, logger } from "@bogeychan/elysia-logger";
+import { logger } from "@bogeychan/elysia-logger";
 import { settingsRoutes } from "./routes/settings";
+import { log } from "../lib/utils";
+import { toolRoute } from "./routes/tools";
 
 const app = new Elysia();
 
-const log = createPinoLogger();
-
-app.onError((ctx) => {
-  log.error(ctx, ctx.error.name);
-  return ctx.error.message;
+app.onError(({ error, code }) => {
+  switch (code) {
+    case "VALIDATION":
+      log.error("Validation error", error);
+      return {
+        message: error.message,
+      };
+    default:
+      log.error("Internal server error", error);
+      return error;
+  }
 });
 app.use(serverTiming());
 app.use(
@@ -99,6 +107,6 @@ const port = env.PORT;
 
 export function startServer() {
   app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+    log.info(`Server running on port ${port}`);
   });
 }
