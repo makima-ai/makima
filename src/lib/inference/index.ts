@@ -110,19 +110,24 @@ export async function universalModels(provider?: string): Promise<string[]> {
       return models.map((model) => `${provider}/${model}`);
     }
 
-    const allModels: string[] = [];
+    const modelsByProvider: { [key: string]: string[] } = {};
 
     for (const provider of inference_providers) {
       try {
         const adapter = createAdapter(provider);
         const models = await adapter.models();
-        allModels.push(...models.map((model) => `${provider}/${model}`));
+        modelsByProvider[provider] = models.map(
+          (model) => `${provider}/${model}`,
+        );
       } catch (error) {
         console.error(`Error fetching models for ${provider}:`, error);
+        modelsByProvider[provider] = [];
       }
     }
 
-    return allModels;
+    return Object.entries(modelsByProvider)
+      .sort(([, a], [, b]) => a.length - b.length)
+      .flatMap(([, models]) => models);
   } catch (error) {
     console.error("Error during models fetching:", error);
     throw new Error("Failed to fetch models");
