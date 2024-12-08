@@ -6,6 +6,7 @@ import serverTiming from "@elysiajs/server-timing";
 import { swagger } from "@elysiajs/swagger";
 import { knowledgeRoute } from "./routes/knowledge";
 import { createPinoLogger, logger } from "@bogeychan/elysia-logger";
+import { settingsRoutes } from "./routes/settings";
 
 const app = new Elysia();
 
@@ -76,6 +77,10 @@ app.use(
           description: "APIs for managing tools",
         },
         {
+          name: "Settings",
+          description: "Server details and global settings",
+        },
+        {
           name: "Service",
           description: "Service health check and stats",
         },
@@ -88,6 +93,7 @@ app.use(threadRoute);
 app.use(agentRoute);
 app.use(toolRoute);
 app.use(knowledgeRoute);
+app.use(settingsRoutes);
 
 const port = env.PORT;
 

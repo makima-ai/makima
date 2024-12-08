@@ -179,6 +179,11 @@ export class OllamaAdapter implements ModelAdapter {
     }
   }
 
+  async models(): Promise<string[]> {
+    const models = await this.ollama.list();
+    return models.models.map((model) => model.name);
+  }
+
   private convertOllamaResponseToMessage(
     response: ChatResponse,
     agent_name?: string,

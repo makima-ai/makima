@@ -184,4 +184,5 @@ export interface ModelAdapter {
     onMessage?: (message: Message) => void;
   }): Promise<OutputMessage>;
   embed(params: { documents: Document[]; model: string }): Promise<Embedding[]>;
+  models(): Promise<string[]>;
 }

@@ -87,8 +87,8 @@ export class OpenAIAdapter implements ModelAdapter {
         response_format:
           format === "json"
             ? {
-                type: "json_object",
-              }
+              type: "json_object",
+            }
             : undefined,
       },
       { signal },
@@ -166,6 +166,11 @@ export class OpenAIAdapter implements ModelAdapter {
       };
     });
     return embeddings;
+  }
+
+  async models(): Promise<string[]> {
+    const models = await this.openai.models.list();
+    return models.data.map((model) => model.id);
   }
 }
 

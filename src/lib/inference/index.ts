@@ -4,6 +4,8 @@ import { OllamaAdapter } from "./adapters/ollama";
 import type { Message, ModelAdapter, OutputMessage, Tool } from "./types";
 import type { Embedding, Document } from "../knowledge/types";
 
+export const inference_providers = ["openai", "ollama"];
+
 function createAdapter(provider: string): ModelAdapter {
   switch (provider.toLowerCase()) {
     case "openai":
@@ -18,10 +20,10 @@ function createAdapter(provider: string): ModelAdapter {
     // This is just a test adapter, using the ollama beta compatibility layer for openai sdk
     case "ollama-openai":
       const ollamaOpenaiConfig: ConstructorParameters<typeof OpenAIAdapter>[0] =
-        {
-          apiKey: "",
-          baseURL: `${env.OLLAMA_HOST}/v1`,
-        };
+      {
+        apiKey: "",
+        baseURL: `${env.OLLAMA_HOST}/v1`,
+      };
       return new OpenAIAdapter(ollamaOpenaiConfig);
     case "ollama":
       const ollamaConfig: ConstructorParameters<typeof OllamaAdapter>[0] = {
@@ -97,5 +99,32 @@ export async function universalEmbed({
   } catch (error) {
     console.error("Error during embedding:", error);
     throw new Error("Failed to perform embedding");
+  }
+}
+
+export async function universalModels(provider?: string): Promise<string[]> {
+  try {
+    if (provider) {
+      const adapter = createAdapter(provider);
+      const models = await adapter.models();
+      return models.map((model) => `${provider}/${model}`);
+    }
+
+    const allModels: string[] = [];
+
+    for (const provider of inference_providers) {
+      try {
+        const adapter = createAdapter(provider);
+        const models = await adapter.models();
+        allModels.push(...models.map((model) => `${provider}/${model}`));
+      } catch (error) {
+        console.error(`Error fetching models for ${provider}:`, error);
+      }
+    }
+
+    return allModels;
+  } catch (error) {
+    console.error("Error during models fetching:", error);
+    throw new Error("Failed to fetch models");
   }
 }
