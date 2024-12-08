@@ -79,6 +79,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         prompt: t.String({ minLength: 4 }),
         primaryModel: t.String({ minLength: 4 }),
         fallbackModels: t.Optional(t.Array(t.String({ minLength: 4 }))),
+        format: t.Optional(t.Literal("json")),
       }),
       detail: {
         summary: "Create a new agent",

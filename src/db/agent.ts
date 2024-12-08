@@ -9,7 +9,6 @@ import {
   agentHelperTable,
 } from "./schema";
 import type { Agent } from "../lib/inference/types";
-import type { DbTool } from "../lib/thread/tool";
 
 // Agent CRUD operations
 
@@ -19,6 +18,7 @@ export const createAgent = async (agent: {
   prompt: string;
   primaryModel: string;
   fallbackModels?: string[];
+  format?: string;
 }) => {
   try {
     const [newAgent] = await db.insert(agentsTable).values(agent).returning();
@@ -78,6 +78,7 @@ export const getAgentById = async (id: string): Promise<Agent | null> => {
         primaryModel: agentsTable.primaryModel,
         fallbackModels: agentsTable.fallbackModels,
         createdAt: agentsTable.createdAt,
+        format: agentsTable.format,
       })
       .from(agentHelperTable)
       .innerJoin(
@@ -95,6 +96,7 @@ export const getAgentById = async (id: string): Promise<Agent | null> => {
         primaryModel: agentsTable.primaryModel,
         fallbackModels: agentsTable.fallbackModels,
         createdAt: agentsTable.createdAt,
+        format: agentsTable.format,
       })
       .from(agentHelperTable)
       .innerJoin(agentsTable, eq(agentHelperTable.mainAgentId, agentsTable.id))
@@ -157,6 +159,7 @@ export const getAgentByName = async (name: string): Promise<Agent | null> => {
         primaryModel: agentsTable.primaryModel,
         fallbackModels: agentsTable.fallbackModels,
         createdAt: agentsTable.createdAt,
+        format: agentsTable.format,
       })
       .from(agentHelperTable)
       .innerJoin(
@@ -174,6 +177,7 @@ export const getAgentByName = async (name: string): Promise<Agent | null> => {
         primaryModel: agentsTable.primaryModel,
         fallbackModels: agentsTable.fallbackModels,
         createdAt: agentsTable.createdAt,
+        format: agentsTable.format,
       })
       .from(agentHelperTable)
       .innerJoin(agentsTable, eq(agentHelperTable.mainAgentId, agentsTable.id))
