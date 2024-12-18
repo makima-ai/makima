@@ -149,6 +149,7 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
           role: "human",
           content: body.content,
           name: body.authorId,
+          authorId: body.authorId,
         }),
       );
       if (err) {
@@ -200,6 +201,7 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
         message: t.Object({
           role: t.Literal("human", { default: "human" }),
           name: t.String({ minLength: 3, maxLength: 255 }),
+          authorId: t.String({ minLength: 3, maxLength: 255 }),
           content: t.Union(
             [
               t.String({ minLength: 1 }),

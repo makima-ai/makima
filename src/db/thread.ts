@@ -17,7 +17,7 @@ function dbMessageToMessage(dbMessage: DbMessage): Message {
   const baseMessage = {
     db_id: dbMessage.id,
     context_id: dbMessage.context_id || undefined,
-    author_id: dbMessage.author_id,
+    authorId: dbMessage.author_id,
     createdAt: dbMessage.createdAt,
     calls: dbMessage.calls,
   };
@@ -29,6 +29,7 @@ function dbMessageToMessage(dbMessage: DbMessage): Message {
         role: "human",
         name: dbMessage.name as string,
         content: dbMessage.content as string,
+        authorId: dbMessage.author_id as string,
       };
     case "ai":
       return {
@@ -81,7 +82,7 @@ function messageToDbMessage(
           typeof humanMessage.content === "string"
             ? humanMessage.content
             : JSON.stringify(humanMessage.content),
-        author_id: humanMessage.name,
+        author_id: humanMessage.authorId,
         calls: null,
         callId: null,
       };
@@ -250,7 +251,7 @@ export async function addMessageToThread(
     .execute();
 
   if (message.role === "human") {
-    await updateContextAuthors(threadId, message.name);
+    await updateContextAuthors(threadId, message.authorId);
   }
 
   return dbMessageToMessage(insertedMessage);
@@ -276,7 +277,7 @@ export async function addMessagesToThread(
   await Promise.all(
     messages
       .filter((m): m is UserMessage => m.role === "human")
-      .map((message) => updateContextAuthors(threadId, message.name)),
+      .map((message) => updateContextAuthors(threadId, message.authorId)),
   );
 
   return insertedMessages.map(dbMessageToMessage);

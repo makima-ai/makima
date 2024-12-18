@@ -38,6 +38,7 @@ export type UserMessage = BaseMessage & {
   name: string;
   content: MessageContent;
   attachments?: Attachment[];
+  authorId: string;
 };
 
 export type Attachment = {

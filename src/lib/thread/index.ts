@@ -70,13 +70,25 @@ export async function threadInfer({
 
     const helperAgents = agent.helperAgents || [];
 
-    const atools = helperAgents.map((a) => createToolFromAgent(a, agent));
+    const atools = helperAgents.map((a) =>
+      createToolFromAgent(a, agent, {
+        latestMessage: newMessage,
+        platform: threadDetails.platform || `thread:${threadId}`,
+        authorId: newMessage.authorId,
+      }),
+    );
 
     // Step 5: Run universalInfer
 
     const dbtools: DbTool[] = await getAgentTools(agent.id);
 
-    const registerd_tools = dbtools.map(createToolFromDb);
+    const registerd_tools = dbtools.map((t) =>
+      createToolFromDb(t, {
+        latestMessage: newMessage,
+        platform: threadDetails.platform || `thread:${threadId}`,
+        authorId: newMessage.authorId,
+      }),
+    );
 
     let tools = registerd_tools.concat(kbtools);
     tools = tools.concat(atools);

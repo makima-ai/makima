@@ -45,11 +45,24 @@ export async function agentInfer({
 
   const helperAgent = agent.helperAgents;
 
-  const atools = helperAgent?.map((a) => createToolFromAgent(a, agent)) || [];
+  const atools =
+    helperAgent?.map((a) =>
+      createToolFromAgent(a, agent, {
+        latestMessage: newMessage,
+        platform: `agent:${agent.name}`,
+        authorId: newMessage.authorId,
+      }),
+    ) || [];
 
   const dbtools: DbTool[] = await getAgentTools(agent.id);
 
-  const registerd_tools = dbtools.map(createToolFromDb);
+  const registerd_tools = dbtools.map((t) =>
+    createToolFromDb(t, {
+      latestMessage: newMessage,
+      platform: `agent:${agent.name}`,
+      authorId: newMessage.authorId,
+    }),
+  );
 
   let tools = registerd_tools.concat(kbtools);
   tools = tools.concat(atools);

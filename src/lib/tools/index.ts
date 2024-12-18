@@ -10,20 +10,28 @@ import zodToJsonSchema from "zod-to-json-schema";
 // Infer the type of the database tool from the Drizzle schema
 export type DbTool = typeof toolsTable.$inferSelect;
 
+export type ToolContext = {
+  platform: string;
+  latestMessage: Message;
+  authorId: string;
+};
+
 // Function to convert a database tool to a Tool instance
-export function createToolFromDb(dbTool: DbTool): Tool {
-  // Create the Tool instance
+export function createToolFromDb(dbTool: DbTool, context: ToolContext): Tool {
   return new Tool({
     name: dbTool.name,
     description: dbTool.description || dbTool.name,
     params: dbTool.params as any,
     function: async (params: unknown) => {
       console.log("Calling tool API:", dbTool.endpoint, params);
+
       if (typeof params !== "object") {
         console.error("Invalid parameters:", params);
         throw new Error("Invalid parameters");
       }
-      params = (params || {}) as object;
+
+      const parsedParams = (params || {}) as Record<string, unknown>;
+
       try {
         // Prepare the request options
         const options: RequestInit = {
@@ -33,19 +41,31 @@ export function createToolFromDb(dbTool: DbTool): Tool {
           },
         };
 
-        // Add body for POST, PUT, PATCH methods
-        if (["POST", "PUT", "PATCH"].includes(dbTool.method.toUpperCase())) {
-          options.body = JSON.stringify(params);
-        }
-
-        // For GET requests, append params to URL
         let url = dbTool.endpoint;
-        if (
-          dbTool.method.toUpperCase() === "GET" &&
-          Object.keys(params as object).length > 0
-        ) {
-          const searchParams = new URLSearchParams(params as any);
-          url += `?${searchParams.toString()}`;
+
+        if (["POST", "PUT", "PATCH"].includes(dbTool.method.toUpperCase())) {
+          // Include context and payload in the request body
+          const bodyPayload = {
+            context: {
+              platform: context.platform,
+              latestMessage: context.latestMessage,
+            },
+            payload: parsedParams, // Send parsedParams under "payload" key
+          };
+          options.body = JSON.stringify(bodyPayload);
+        } else if (dbTool.method.toUpperCase() === "GET") {
+          // For GET requests, only send payload as query parameters
+          const searchParams = new URLSearchParams();
+
+          // Add payload as query parameters
+          for (const [key, value] of Object.entries(parsedParams)) {
+            searchParams.set(key, String(value));
+          }
+
+          const finalQueryString = searchParams.toString();
+          if (finalQueryString) {
+            url += `?${finalQueryString}`;
+          }
         }
 
         // Make the API call
@@ -134,51 +154,54 @@ const agentParamsSchema = z.object({
   message: z.string().describe("Message to send the agent"),
 });
 
-export function createToolFromAgent(agent: Agent, parentAgent: Agent) {
-  const knowledgeBases = agent.knowledgeBases || [];
-  const kbtools = knowledgeBases.map(createToolFromKB);
-  const dbtools: DbTool[] = agent.tools || [];
-  const registerd_tools = dbtools.map(createToolFromDb);
-  let tools = registerd_tools.concat(kbtools);
+export function createToolFromAgent(agent: Agent, parentAgent: Agent, context: ToolContext): Tool {
+  {
+    const knowledgeBases = agent.knowledgeBases || [];
+    const kbtools = knowledgeBases.map(createToolFromKB);
+    const dbtools: DbTool[] = agent.tools || [];
+    const registerd_tools = dbtools.map((t) =>
+      createToolFromDb(t, context),
+    );
+    let tools = registerd_tools.concat(kbtools);
 
-  return new Tool({
-    name: `agent-${agent.name}`,
-    description: `Tool to talk to: ${agent.name}
+    return new Tool({
+      name: `agent-${agent.name}`,
+      description: `Tool to talk to: ${agent.name}
 description: ${agent.description}
 `,
-    params: zodToJsonSchema(agentParamsSchema),
-    function: async (params: unknown) => {
-      console.log(agent.name, "is being called by", parentAgent.name);
+      params: zodToJsonSchema(agentParamsSchema),
+      function: async (params: unknown) => {
+        console.log(agent.name, "is being called by", parentAgent.name);
 
-      const parsed = agentParamsSchema.parse(params);
+        const parsed = agentParamsSchema.parse(params);
 
-      console.log("Calling agent", agent.name, "with message", parsed);
+        console.log("Calling agent", agent.name, "with message", parsed);
 
-      const systemMessage: SystemMessage = {
-        role: "system",
-        content: agent.prompt,
-      };
-      const newMessage: Message = {
-        role: "human",
-        name: parentAgent.name,
-        content: parsed.message,
-      };
-      const result = await universalInfer({
-        model: agent.primaryModel,
-        messages: [systemMessage, newMessage],
-        tools: tools.length > 0 ? tools : undefined,
-        format: agent.format || undefined,
-      });
-      return JSON.stringify(result);
-    },
-    parse: (params: string) => {
-      console.log("Parsing params", params);
-      const parsed = typeof params === "string" ? JSON.parse(params) : params;
-      const valid = agentParamsSchema.parse(parsed);
-      console.log("Valid params", valid);
-      return valid;
-    },
-    errorParser: (error: unknown) =>
-      `Error: ${error instanceof Error ? error.message : String(error)}`,
-  });
-}
+        const systemMessage: SystemMessage = {
+          role: "system",
+          content: agent.prompt,
+        };
+        const newMessage: Message = {
+          role: "ai",
+          name: parentAgent.name,
+          content: parsed.message,
+        };
+        const result = await universalInfer({
+          model: agent.primaryModel,
+          messages: [systemMessage, newMessage],
+          tools: tools.length > 0 ? tools : undefined,
+          format: agent.format || undefined,
+        });
+        return JSON.stringify(result);
+      },
+      parse: (params: string) => {
+        console.log("Parsing params", params);
+        const parsed = typeof params === "string" ? JSON.parse(params) : params;
+        const valid = agentParamsSchema.parse(parsed);
+        console.log("Valid params", valid);
+        return valid;
+      },
+      errorParser: (error: unknown) =>
+        `Error: ${error instanceof Error ? error.message : String(error)}`,
+    });
+  }
