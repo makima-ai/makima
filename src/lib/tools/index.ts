@@ -1,11 +1,10 @@
-import { z } from "zod";
 import type { toolsTable } from "../../db/schema";
 import { Tool } from "../inference/tool";
 import { searchKnowledgeBase } from "../knowledge";
 import type { KnowledgeBase } from "../knowledge/types";
 import type { Agent, Message, SystemMessage } from "../inference/types";
 import { universalInfer } from "../inference";
-import zodToJsonSchema from "zod-to-json-schema";
+import { t } from "elysia";
 
 // Infer the type of the database tool from the Drizzle schema
 export type DbTool = typeof toolsTable.$inferSelect;
@@ -95,9 +94,14 @@ export function createToolFromDb(dbTool: DbTool, context: ToolContext): Tool {
   });
 }
 
-const paramsSchema = z.object({
-  query: z.string().describe("Search query"),
-  k: z.string().default("2").describe("Top k number of results to return"),
+const paramsSchema = t.Object({
+  query: t.String({
+    description: "Query to search the knowledge base",
+  }),
+  k: t.String({
+    default: "2",
+    description: "Top k number of results to return",
+  }),
 });
 
 export function createToolFromKB(kb: KnowledgeBase): Tool {
@@ -105,7 +109,7 @@ export function createToolFromKB(kb: KnowledgeBase): Tool {
     name: `search-knowledge-base-${kb.name}`,
     description: `Tool to Search knowledge base: ${kb.name}.
 description: ${kb.description}`,
-    params: zodToJsonSchema(paramsSchema),
+    params: paramsSchema,
     function: async (params: unknown) => {
       console.log("Searching knowledge base", kb.name, params);
 
@@ -150,8 +154,10 @@ description: ${kb.description}`,
   return tool;
 }
 
-const agentParamsSchema = z.object({
-  message: z.string().describe("Message to send the agent"),
+const agentParamsSchema = t.Object({
+  message: t.String({
+    description: "Message to send the agent",
+  }),
 });
 
 export function createToolFromAgent(
@@ -171,7 +177,7 @@ export function createToolFromAgent(
       description: `Tool to talk to: ${agent.name}
 description: ${agent.description}
 `,
-      params: zodToJsonSchema(agentParamsSchema),
+      params: agentParamsSchema,
       function: async (params: unknown) => {
         console.log(agent.name, "is being called by", parentAgent.name);
 
