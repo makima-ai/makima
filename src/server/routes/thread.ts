@@ -93,6 +93,15 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       );
       if (err) {
         log.error(err.message);
+
+        if (err.message.includes("unique")) {
+          return error(409, err.message);
+        }
+
+        if (err.message.includes("not found")) {
+          return error(404, err.message);
+        }
+
         return error(500, "Error creating thread");
       }
       return newThread;
@@ -312,7 +321,11 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       );
       if (err) {
         log.error(err.message);
-        return error(500, "Error updating thread scaling configuration");
+        const status = err.message.includes("not found") ? 404 : 500;
+        return error(
+          status,
+          status === 404 ? err.message : "Error updating thread scaling",
+        );
       }
       if (!updatedThread) {
         return error(404, "Thread not found or scaling could not be updated");
