@@ -157,8 +157,8 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
         addMessageToThread(id, {
           role: "human",
           content: body.content,
-          name: body.authorId,
-          authorId: body.authorId,
+          name: body.name,
+          authorId: body.authorId || body.name,
         }),
       );
       if (err) {
@@ -175,7 +175,7 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
         callId: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
         name: t.String({ minLength: 4, maxLength: 255 }),
         content: t.String({ minLength: 1 }),
-        authorId: t.String({ minLength: 4, maxLength: 255 }),
+        authorId: t.Optional(t.String({ minLength: 4, maxLength: 255 })),
       }),
       detail: {
         summary: "Add a message to a thread",
@@ -188,6 +188,10 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
   .post(
     "/:id/chat",
     async ({ params: { id }, body, error }) => {
+      if (!body.message.authorId) {
+        body.message.authorId = body.message.name;
+      }
+
       const [result, err] = await handle(
         threadInfer({
           threadId: id,
@@ -197,6 +201,11 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
       );
       if (err) {
         log.error(err.message);
+
+        if (err.message.includes("not found")) {
+          return error(404, err.message);
+        }
+
         return error(500, "Error performing thread inference");
       }
       return result;
@@ -210,7 +219,7 @@ export const threadRoute = new Elysia({ prefix: "/thread" })
         message: t.Object({
           role: t.Literal("human", { default: "human" }),
           name: t.String({ minLength: 3, maxLength: 255 }),
-          authorId: t.String({ minLength: 3, maxLength: 255 }),
+          authorId: t.Optional(t.String({ minLength: 3, maxLength: 255 })),
           content: t.Union(
             [
               t.String({ minLength: 1 }),
