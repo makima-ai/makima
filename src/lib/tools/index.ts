@@ -154,14 +154,16 @@ const agentParamsSchema = z.object({
   message: z.string().describe("Message to send the agent"),
 });
 
-export function createToolFromAgent(agent: Agent, parentAgent: Agent, context: ToolContext): Tool {
+export function createToolFromAgent(
+  agent: Agent,
+  parentAgent: Agent,
+  context: ToolContext,
+): Tool {
   {
     const knowledgeBases = agent.knowledgeBases || [];
     const kbtools = knowledgeBases.map(createToolFromKB);
     const dbtools: DbTool[] = agent.tools || [];
-    const registerd_tools = dbtools.map((t) =>
-      createToolFromDb(t, context),
-    );
+    const registerd_tools = dbtools.map((t) => createToolFromDb(t, context));
     let tools = registerd_tools.concat(kbtools);
 
     return new Tool({
@@ -205,3 +207,4 @@ description: ${agent.description}
         `Error: ${error instanceof Error ? error.message : String(error)}`,
     });
   }
+}
