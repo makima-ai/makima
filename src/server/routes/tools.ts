@@ -11,8 +11,12 @@ import { handle, log } from "../../lib/utils";
 export const toolRoute = new Elysia({ prefix: "/tool" })
   .get(
     "/",
-    async () => {
-      const [tools, err] = await handle(listAllTools());
+    async ({ query }) => {
+      const [tools, err] = await handle(
+        listAllTools({
+          tag: query.tag,
+        }),
+      );
       if (err) {
         log.error(err.message);
         return error(500, "Error getting tools");
@@ -20,6 +24,9 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
       return tools;
     },
     {
+      query: t.Object({
+        tag: t.Optional(t.String({ minLength: 1 })),
+      }),
       detail: {
         summary: "Get all tools",
         description:

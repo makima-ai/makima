@@ -12,6 +12,7 @@ export const contextsTable = pgTable("contexts", {
     "window" | "threshold" | "block"
   >(),
   scaling_config: jsonb("scaling_config").$type<ScalingConfig>(),
+  tag: text("tag"),
 });
 
 export const messagesTable = pgTable("messages", {
@@ -27,6 +28,7 @@ export const messagesTable = pgTable("messages", {
   context_id: text("context_id").references(() => contextsTable.id),
   author_id: text("author_id"),
   createdAt: timestamp("created_at").defaultNow(),
+  tag: text("tag"),
 });
 
 export const summariesTable = pgTable("summaries", {
@@ -54,6 +56,7 @@ export const agentsTable = pgTable("agents", {
   fallbackModels: jsonb("fallback_models").$type<string[]>(),
   createdAt: timestamp("created_at").defaultNow(),
   format: text("format"),
+  tag: text("tag"),
 });
 
 export const toolsTable = pgTable("tools", {
@@ -67,6 +70,7 @@ export const toolsTable = pgTable("tools", {
   endpoint: text("endpoint").notNull(),
   method: text("method").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+  tag: text("tag"),
 });
 
 export const agentToolsTable = pgTable("agent_tools", {
@@ -133,6 +137,7 @@ export const knowledgeBaseTable = pgTable("knowledge_bases", {
   database_provider: text("database_provider").notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  tag: text("tag"),
 });
 
 export const agentKnowledgeBasesTable = pgTable("agent_knowledge_bases", {

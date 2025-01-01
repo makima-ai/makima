@@ -19,6 +19,7 @@ export const createAgent = async (agent: {
   primaryModel: string;
   fallbackModels?: string[];
   format?: string;
+  tag?: string;
 }) => {
   try {
     const [newAgent] = await db.insert(agentsTable).values(agent).returning();
@@ -47,6 +48,7 @@ export const getAgentById = async (id: string): Promise<Agent | null> => {
         endpoint: toolsTable.endpoint,
         method: toolsTable.method,
         createdAt: toolsTable.createdAt,
+        tag: toolsTable.tag,
       })
       .from(agentToolsTable)
       .innerJoin(toolsTable, eq(agentToolsTable.toolId, toolsTable.id))
@@ -60,6 +62,7 @@ export const getAgentById = async (id: string): Promise<Agent | null> => {
         models: knowledgeBaseTable.models,
         database_provider: knowledgeBaseTable.database_provider,
         description: knowledgeBaseTable.description,
+        tag: knowledgeBaseTable.tag,
       })
       .from(agentKnowledgeBasesTable)
       .innerJoin(
@@ -79,6 +82,7 @@ export const getAgentById = async (id: string): Promise<Agent | null> => {
         fallbackModels: agentsTable.fallbackModels,
         createdAt: agentsTable.createdAt,
         format: agentsTable.format,
+        tag: agentsTable.tag,
       })
       .from(agentHelperTable)
       .innerJoin(
@@ -97,6 +101,7 @@ export const getAgentById = async (id: string): Promise<Agent | null> => {
         fallbackModels: agentsTable.fallbackModels,
         createdAt: agentsTable.createdAt,
         format: agentsTable.format,
+        tag: agentsTable.tag,
       })
       .from(agentHelperTable)
       .innerJoin(agentsTable, eq(agentHelperTable.mainAgentId, agentsTable.id))
@@ -105,6 +110,19 @@ export const getAgentById = async (id: string): Promise<Agent | null> => {
     return { ...agent, tools, knowledgeBases, helperAgents, usedByAgents };
   } catch (error) {
     console.error("Error getting agent:", error);
+    throw error;
+  }
+};
+
+export const getAgentsByTag = async (tag: string) => {
+  try {
+    const agents = await db
+      .select()
+      .from(agentsTable)
+      .where(eq(agentsTable.tag, tag));
+    return agents;
+  } catch (error) {
+    console.error("Error getting agents by tag:", error);
     throw error;
   }
 };
@@ -128,6 +146,7 @@ export const getAgentByName = async (name: string): Promise<Agent | null> => {
         endpoint: toolsTable.endpoint,
         method: toolsTable.method,
         createdAt: toolsTable.createdAt,
+        tag: toolsTable.tag,
       })
       .from(agentToolsTable)
       .innerJoin(toolsTable, eq(agentToolsTable.toolId, toolsTable.id))
@@ -141,6 +160,7 @@ export const getAgentByName = async (name: string): Promise<Agent | null> => {
         models: knowledgeBaseTable.models,
         database_provider: knowledgeBaseTable.database_provider,
         description: knowledgeBaseTable.description,
+        tag: knowledgeBaseTable.tag,
       })
       .from(agentKnowledgeBasesTable)
       .innerJoin(
@@ -160,6 +180,7 @@ export const getAgentByName = async (name: string): Promise<Agent | null> => {
         fallbackModels: agentsTable.fallbackModels,
         createdAt: agentsTable.createdAt,
         format: agentsTable.format,
+        tag: agentsTable.tag,
       })
       .from(agentHelperTable)
       .innerJoin(
@@ -178,6 +199,7 @@ export const getAgentByName = async (name: string): Promise<Agent | null> => {
         fallbackModels: agentsTable.fallbackModels,
         createdAt: agentsTable.createdAt,
         format: agentsTable.format,
+        tag: agentsTable.tag,
       })
       .from(agentHelperTable)
       .innerJoin(agentsTable, eq(agentHelperTable.mainAgentId, agentsTable.id))
@@ -255,6 +277,7 @@ export const getAgentTools = async (agentIdOrName: string) => {
         endpoint: toolsTable.endpoint,
         method: toolsTable.method,
         createdAt: toolsTable.createdAt,
+        tag: toolsTable.tag,
       })
       .from(agentToolsTable)
       .innerJoin(toolsTable, eq(agentToolsTable.toolId, toolsTable.id))
@@ -369,6 +392,7 @@ export const createTool = async (tool: {
   params?: any;
   endpoint: string;
   method: string;
+  tag?: string;
 }) => {
   try {
     const [newTool] = await db.insert(toolsTable).values(tool).returning();
@@ -520,9 +544,13 @@ export const removeToolFromAgentByName = async (
   }
 };
 
-export const listAllAgents = async () => {
+export const listAllAgents = async (filters: { tag?: string } = {}) => {
   try {
-    const agents = await db.select().from(agentsTable).execute();
+    const query = db.select().from(agentsTable);
+    if (filters.tag) {
+      query.where(eq(agentsTable.tag, filters.tag));
+    }
+    const agents = await query.execute();
     return agents;
   } catch (error) {
     console.error("Error listing agents:", error);
@@ -530,10 +558,13 @@ export const listAllAgents = async () => {
   }
 };
 
-// New function to list all tools
-export const listAllTools = async () => {
+export const listAllTools = async (filters: { tag?: string } = {}) => {
   try {
-    const tools = await db.select().from(toolsTable).execute();
+    const query = db.select().from(toolsTable);
+    if (filters.tag) {
+      query.where(eq(toolsTable.tag, filters.tag));
+    }
+    const tools = await query.execute();
     return tools;
   } catch (error) {
     console.error("Error listing tools:", error);

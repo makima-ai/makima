@@ -11,7 +11,15 @@ import { log } from "../lib/utils";
 import { toolRoute } from "./routes/tools";
 
 const app = new Elysia();
-
+app.onParse(async ({ request, contentType }) => {
+  try {
+    if (contentType === "application/json") {
+      return await request.json();
+    }
+  } catch (error) {
+    return request.text();
+  }
+});
 app.onError(({ error, code }) => {
   switch (code) {
     case "VALIDATION":

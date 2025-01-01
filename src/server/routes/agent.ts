@@ -23,8 +23,12 @@ import { handle, log } from "../../lib/utils";
 export const agentRoute = new Elysia({ prefix: "/agent" })
   .get(
     "/",
-    async () => {
-      const [agents, err] = await handle(listAllAgents());
+    async ({ query }) => {
+      const [agents, err] = await handle(
+        listAllAgents({
+          tag: query.tag,
+        }),
+      );
       if (err) {
         log.error(err.message);
         return error(500, "Error getting agents");
@@ -32,6 +36,9 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
       return agents;
     },
     {
+      query: t.Object({
+        tag: t.Optional(t.String({ minLength: 1 })),
+      }),
       detail: {
         summary: "Get all agents",
         description:
@@ -263,6 +270,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         agentName: t.String({ minLength: 4, maxLength: 255 }),
         helperAgentName: t.String({ minLength: 4, maxLength: 255 }),
       }),
+      body: t.Any(),
       detail: {
         summary: "Add helper agent",
         description:
@@ -311,6 +319,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         agentName: t.String({ minLength: 4, maxLength: 255 }),
         helperAgentName: t.String({ minLength: 4, maxLength: 255 }),
       }),
+      body: t.Any(),
       detail: {
         summary: "Remove helper agent",
         description:
@@ -358,6 +367,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         agentName: t.String({ minLength: 4, maxLength: 255 }),
         toolName: t.String({ minLength: 4, maxLength: 255 }),
       }),
+      body: t.Any(),
       detail: {
         summary: "Add tool to agent",
         description:
@@ -406,6 +416,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         agentName: t.String({ minLength: 4, maxLength: 255 }),
         toolName: t.String({ minLength: 4, maxLength: 255 }),
       }),
+      body: t.Any(),
       detail: {
         summary: "Remove tool from agent",
         description:
@@ -452,6 +463,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         agentName: t.String({ minLength: 4, maxLength: 255 }),
         knowledgeBaseName: t.String({ minLength: 4, maxLength: 255 }),
       }),
+      body: t.Any(),
       detail: {
         summary: "Add knowledge base to agent",
         description:
@@ -500,6 +512,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         agentName: t.String({ minLength: 4, maxLength: 255 }),
         knowledgeBaseName: t.String({ minLength: 4, maxLength: 255 }),
       }),
+      body: t.Any(),
       detail: {
         summary: "Remove knowledge base from agent",
         description:
