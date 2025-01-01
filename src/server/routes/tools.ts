@@ -80,6 +80,7 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
         params: t.Optional(t.Any()),
         endpoint: t.String({ minLength: 4 }),
         method: t.String({ minLength: 1 }),
+        tag: t.Optional(t.String({ minLength: 1 })),
       }),
       detail: {
         summary: "Create a new tool",
@@ -114,6 +115,7 @@ export const toolRoute = new Elysia({ prefix: "/tool" })
         params: t.Optional(t.Any()),
         endpoint: t.Optional(t.String({ minLength: 4 })),
         method: t.Optional(t.String({ minLength: 1 })),
+        tag: t.Optional(t.String({ minLength: 1 })),
       }),
       detail: {
         summary: "Update a tool by name",

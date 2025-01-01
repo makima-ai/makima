@@ -96,6 +96,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         primaryModel: t.String({ minLength: 4 }),
         fallbackModels: t.Optional(t.Array(t.String({ minLength: 4 }))),
         format: t.Optional(t.Literal("json")),
+        tag: t.Optional(t.String({ minLength: 1 })),
       }),
       detail: {
         summary: "Create a new agent",
@@ -131,6 +132,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         primaryModel: t.Optional(t.String({ minLength: 4 })),
         fallbackModels: t.Optional(t.Array(t.String({ minLength: 4 }))),
         format: t.Optional(t.Literal("json")),
+        tag: t.Optional(t.String({ minLength: 1 })),
       }),
       detail: {
         summary: "Update an agent by name",
