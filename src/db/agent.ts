@@ -323,10 +323,22 @@ export const addHelperAgentByName = async (
       throw new Error("Helper agent not found");
     }
 
-    await db.insert(agentHelperTable).values({
-      mainAgentId: mainAgent.id,
-      helperAgentId: helperAgent.id,
-    });
+    const existingEntry = await db
+      .select()
+      .from(agentHelperTable)
+      .where(
+        and(
+          eq(agentHelperTable.mainAgentId, mainAgent.id),
+          eq(agentHelperTable.helperAgentId, helperAgent.id),
+        ),
+      );
+
+    if (existingEntry.length === 0) {
+      await db.insert(agentHelperTable).values({
+        mainAgentId: mainAgent.id,
+        helperAgentId: helperAgent.id,
+      });
+    }
     return await getAgentById(mainAgent.id);
   } catch (error) {
     console.error("Error adding helper agent by name:", error);
@@ -463,7 +475,19 @@ export const deleteTool = async (name: string) => {
 
 export const addToolToAgent = async (agentId: string, toolId: string) => {
   try {
-    await db.insert(agentToolsTable).values({ agentId, toolId });
+    const existingEntry = await db
+      .select()
+      .from(agentToolsTable)
+      .where(
+        and(
+          eq(agentToolsTable.agentId, agentId),
+          eq(agentToolsTable.toolId, toolId),
+        ),
+      );
+
+    if (existingEntry.length === 0) {
+      await db.insert(agentToolsTable).values({ agentId, toolId });
+    }
     return await getAgentById(agentId);
   } catch (error) {
     console.error("Error adding tool to agent:", error);
