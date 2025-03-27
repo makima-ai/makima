@@ -59,11 +59,12 @@ export async function universalInfer({
 }): Promise<OutputMessage> {
   const modelParts = model.split("/");
 
-  if (modelParts.length !== 2) {
+  if (modelParts.length < 2) {
     throw new Error("Invalid model name");
   }
 
-  const [provider, modelName] = modelParts;
+  const [provider, ...modelNameParts] = modelParts;
+  const modelName = modelNameParts.join("/");
 
   const adapter = createAdapter(provider);
 
