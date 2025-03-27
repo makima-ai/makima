@@ -27,7 +27,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
       const [agents, err] = await handle(
         listAllAgents({
           tag: query.tag,
-        }),
+        })
       );
       if (err) {
         log.error(err.message);
@@ -45,7 +45,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
           "Get all agents in the system and their details such as name, description, prompt, primary model, fallback models, and tools.",
         tags: ["Agent"],
       },
-    },
+    }
   )
   // Get agent by name
   .get(
@@ -74,7 +74,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
           "Gets the details of an agent by its name. This response includes the tools associated with the agent along with the agent details such as name, description, prompt, primary model, and fallback models.",
         tags: ["Agent"],
       },
-    },
+    }
   )
 
   // Create a new agent
@@ -104,7 +104,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
           "Creates a new agent with the provided details. The agent details include the agent name, description, prompt, primary model, fallback models, and tools associated with the agent. These details are required to create a new agent.",
         tags: ["Agent"],
       },
-    },
+    }
   )
 
   // update agent by name
@@ -140,7 +140,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
           "Updates the details of an existing agent by its name. The agent details include the agent name, description, prompt, primary model, fallback models, and tools associated with the agent. These details are required to update an existing agent. whatever different details are provided will be updated.",
         tags: ["Agent"],
       },
-    },
+    }
   )
 
   // Delete an agent
@@ -167,7 +167,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
           "Deletes an agent by its name. This operation is irreversible and will delete all the details associated with the agent, including the tools associated with the agent.",
         tags: ["Agent"],
       },
-    },
+    }
   )
 
   // Agent inference (temporary chat)
@@ -179,7 +179,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
         agentInfer({
           agentName,
           newMessage: message as UserMessage,
-        }),
+        })
       );
       if (err) {
         log.error(err.message);
@@ -206,25 +206,25 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
                     t.Literal("auto"),
                     t.Literal("low"),
                     t.Literal("high"),
-                  ]),
+                  ])
                 ),
                 format: t.Optional(
-                  t.Union([t.Literal("wav"), t.Literal("mp3")]),
+                  t.Union([t.Literal("wav"), t.Literal("mp3")])
                 ),
-              }),
+              })
             ),
           ],
           {
             default: "",
-          },
+          }
         ),
         attachments: t.Optional(
           t.Array(
             t.Object({
               type: t.String(),
               data: t.Union([t.String(), t.Any()]),
-            }),
-          ),
+            })
+          )
         ),
       }),
 
@@ -234,7 +234,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
           "Performs inference with an agent with a one time message. This inference call will not keep history, to use history use the thread inference endpoint.",
         tags: ["Agent"],
       },
-    },
+    }
   )
   // Add helper agent
   .post(
@@ -259,7 +259,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
       }
 
       const [updatedAgent, err3] = await handle(
-        addHelperAgentByName(agentName, helperAgentName),
+        addHelperAgentByName(agentName, helperAgentName)
       );
       if (err3) {
         log.error(err3.message);
@@ -279,7 +279,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
           "Adds a helper agent to an agent by their names. This operation allows the main agent to use the helper agent's capabilities.",
         tags: ["Agent"],
       },
-    },
+    }
   )
 
   // Remove helper agent
@@ -308,7 +308,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
       }
 
       const [updatedAgent, err3] = await handle(
-        removeHelperAgentByName(agentName, helperAgentName),
+        removeHelperAgentByName(agentName, helperAgentName)
       );
       if (err3) {
         log.error(err3.message);
@@ -328,7 +328,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
           "Removes a helper agent from an agent by their names. This operation removes the main agent's ability to use the helper agent's capabilities.",
         tags: ["Agent"],
       },
-    },
+    }
   )
   // Add tool to agent
   .post(
@@ -356,7 +356,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
       }
 
       const [updatedAgent, err3] = await handle(
-        addToolToAgentByName(agentName, toolName),
+        addToolToAgentByName(agentName, toolName)
       );
       if (err3) {
         log.error(err3.message);
@@ -376,7 +376,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
           "Adds a tool to an agent by the agent name and tool name. This operation is used to associate a tool with an agent.",
         tags: ["Agent"],
       },
-    },
+    }
   )
 
   // Remove tool from agent
@@ -405,7 +405,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
       }
 
       const [updatedAgent, err3] = await handle(
-        removeToolFromAgentByName(agentName, toolName),
+        removeToolFromAgentByName(agentName, toolName)
       );
       if (err3) {
         log.error(err3.message);
@@ -425,7 +425,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
           "Removes a tool from an agent by the agent name and tool name. This operation is used to disassociate a tool from an agent.",
         tags: ["Agent"],
       },
-    },
+    }
   )
   .post(
     "/:agentName/add-knowledge-base/:knowledgeBaseName",
@@ -452,7 +452,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
       }
 
       const [updatedAgent, err3] = await handle(
-        addKnowledgeBaseToAgentByName(agentName, knowledgeBaseName),
+        addKnowledgeBaseToAgentByName(agentName, knowledgeBaseName)
       );
       if (err3) {
         log.error(err3.message);
@@ -472,7 +472,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
           "Adds a knowledge base to an agent by the agent name and knowledge base name. This operation is used to associate a knowledge base with an agent.",
         tags: ["Agent"],
       },
-    },
+    }
   )
 
   // Remove knowledge base from agent
@@ -501,7 +501,7 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
       }
 
       const [updatedAgent, err3] = await handle(
-        removeKnowledgeBaseFromAgentByName(agentName, knowledgeBaseName),
+        removeKnowledgeBaseFromAgentByName(agentName, knowledgeBaseName)
       );
       if (err3) {
         log.error(err3.message);
@@ -521,5 +521,5 @@ export const agentRoute = new Elysia({ prefix: "/agent" })
           "Removes a knowledge base from an agent by the agent name and knowledge base name. This operation is used to disassociate a knowledge base from an agent.",
         tags: ["Agent"],
       },
-    },
+    }
   );

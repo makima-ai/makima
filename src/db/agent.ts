@@ -67,7 +67,7 @@ export const getAgentById = async (id: string): Promise<Agent | null> => {
       .from(agentKnowledgeBasesTable)
       .innerJoin(
         knowledgeBaseTable,
-        eq(agentKnowledgeBasesTable.knowledgeBaseId, knowledgeBaseTable.id),
+        eq(agentKnowledgeBasesTable.knowledgeBaseId, knowledgeBaseTable.id)
       )
       .where(eq(agentKnowledgeBasesTable.agentId, id));
 
@@ -87,7 +87,7 @@ export const getAgentById = async (id: string): Promise<Agent | null> => {
       .from(agentHelperTable)
       .innerJoin(
         agentsTable,
-        eq(agentHelperTable.helperAgentId, agentsTable.id),
+        eq(agentHelperTable.helperAgentId, agentsTable.id)
       )
       .where(eq(agentHelperTable.mainAgentId, id));
 
@@ -165,7 +165,7 @@ export const getAgentByName = async (name: string): Promise<Agent | null> => {
       .from(agentKnowledgeBasesTable)
       .innerJoin(
         knowledgeBaseTable,
-        eq(agentKnowledgeBasesTable.knowledgeBaseId, knowledgeBaseTable.id),
+        eq(agentKnowledgeBasesTable.knowledgeBaseId, knowledgeBaseTable.id)
       )
       .where(eq(agentKnowledgeBasesTable.agentId, agent.id));
 
@@ -185,7 +185,7 @@ export const getAgentByName = async (name: string): Promise<Agent | null> => {
       .from(agentHelperTable)
       .innerJoin(
         agentsTable,
-        eq(agentHelperTable.helperAgentId, agentsTable.id),
+        eq(agentHelperTable.helperAgentId, agentsTable.id)
       )
       .where(eq(agentHelperTable.mainAgentId, agent.id));
 
@@ -220,7 +220,7 @@ export const getAgentByName = async (name: string): Promise<Agent | null> => {
 
 export const updateAgent = async (
   name: string,
-  updates: Partial<typeof agentsTable.$inferInsert>,
+  updates: Partial<typeof agentsTable.$inferInsert>
 ) => {
   try {
     const [updatedAgent] = await db
@@ -294,7 +294,7 @@ export const getAgentTools = async (agentIdOrName: string) => {
 
 export const addHelperAgent = async (
   mainAgentId: string,
-  helperAgentId: string,
+  helperAgentId: string
 ) => {
   try {
     await db.insert(agentHelperTable).values({
@@ -310,7 +310,7 @@ export const addHelperAgent = async (
 
 export const addHelperAgentByName = async (
   mainAgentName: string,
-  helperAgentName: string,
+  helperAgentName: string
 ) => {
   try {
     const mainAgent = await getAgentByName(mainAgentName);
@@ -329,8 +329,8 @@ export const addHelperAgentByName = async (
       .where(
         and(
           eq(agentHelperTable.mainAgentId, mainAgent.id),
-          eq(agentHelperTable.helperAgentId, helperAgent.id),
-        ),
+          eq(agentHelperTable.helperAgentId, helperAgent.id)
+        )
       );
 
     if (existingEntry.length === 0) {
@@ -348,7 +348,7 @@ export const addHelperAgentByName = async (
 
 export const removeHelperAgent = async (
   mainAgentId: string,
-  helperAgentId: string,
+  helperAgentId: string
 ) => {
   try {
     await db
@@ -356,8 +356,8 @@ export const removeHelperAgent = async (
       .where(
         and(
           eq(agentHelperTable.mainAgentId, mainAgentId),
-          eq(agentHelperTable.helperAgentId, helperAgentId),
-        ),
+          eq(agentHelperTable.helperAgentId, helperAgentId)
+        )
       );
     return await getAgentById(mainAgentId);
   } catch (error) {
@@ -368,7 +368,7 @@ export const removeHelperAgent = async (
 
 export const removeHelperAgentByName = async (
   mainAgentName: string,
-  helperAgentName: string,
+  helperAgentName: string
 ) => {
   try {
     const mainAgent = await getAgentByName(mainAgentName);
@@ -386,8 +386,8 @@ export const removeHelperAgentByName = async (
       .where(
         and(
           eq(agentHelperTable.mainAgentId, mainAgent.id),
-          eq(agentHelperTable.helperAgentId, helperAgent.id),
-        ),
+          eq(agentHelperTable.helperAgentId, helperAgent.id)
+        )
       );
     return await getAgentById(mainAgent.id);
   } catch (error) {
@@ -443,7 +443,7 @@ export const getToolByName = async (name: string) => {
 
 export const updateTool = async (
   name: string,
-  updates: Partial<typeof toolsTable.$inferInsert>,
+  updates: Partial<typeof toolsTable.$inferInsert>
 ) => {
   try {
     const [updatedTool] = await db
@@ -481,8 +481,8 @@ export const addToolToAgent = async (agentId: string, toolId: string) => {
       .where(
         and(
           eq(agentToolsTable.agentId, agentId),
-          eq(agentToolsTable.toolId, toolId),
-        ),
+          eq(agentToolsTable.toolId, toolId)
+        )
       );
 
     if (existingEntry.length === 0) {
@@ -497,7 +497,7 @@ export const addToolToAgent = async (agentId: string, toolId: string) => {
 
 export const addToolToAgentByName = async (
   agentName: string,
-  toolName: string,
+  toolName: string
 ) => {
   try {
     const agent = await getAgentByName(agentName);
@@ -528,8 +528,8 @@ export const removeToolFromAgent = async (agentId: string, toolId: string) => {
       .where(
         and(
           eq(agentToolsTable.agentId, agentId),
-          eq(agentToolsTable.toolId, toolId),
-        ),
+          eq(agentToolsTable.toolId, toolId)
+        )
       );
     return await getAgentById(agentId);
   } catch (error) {
@@ -540,7 +540,7 @@ export const removeToolFromAgent = async (agentId: string, toolId: string) => {
 
 export const removeToolFromAgentByName = async (
   agentName: string,
-  toolName: string,
+  toolName: string
 ) => {
   try {
     const agent = await getAgentByName(agentName);
@@ -558,8 +558,8 @@ export const removeToolFromAgentByName = async (
       .where(
         and(
           eq(agentToolsTable.agentId, agent.id),
-          eq(agentToolsTable.toolId, tool.id),
-        ),
+          eq(agentToolsTable.toolId, tool.id)
+        )
       );
     return await getAgentById(agent.id);
   } catch (error) {
