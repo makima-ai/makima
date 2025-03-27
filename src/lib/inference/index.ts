@@ -18,12 +18,21 @@ function createAdapter(provider: string): ModelAdapter {
       };
       return new OpenAIAdapter(openAIConfig);
     // This is just a test adapter, using the ollama beta compatibility layer for openai sdk
+    case "openrouter":
+      if (!env.OPENROUTER_API_KEY) {
+        throw new Error("OPENROUTER_API_KEY is required");
+      }
+      const openRouterConfig: ConstructorParameters<typeof OpenAIAdapter>[0] = {
+        apiKey: env.OPENROUTER_API_KEY,
+        baseURL: env.OPENROUTER_BASE_URL,
+      };
+      return new OpenAIAdapter(openRouterConfig);
     case "ollama-openai":
       const ollamaOpenaiConfig: ConstructorParameters<typeof OpenAIAdapter>[0] =
-      {
-        apiKey: "",
-        baseURL: `${env.OLLAMA_HOST}/v1`,
-      };
+        {
+          apiKey: "",
+          baseURL: `${env.OLLAMA_HOST}/v1`,
+        };
       return new OpenAIAdapter(ollamaOpenaiConfig);
     case "ollama":
       const ollamaConfig: ConstructorParameters<typeof OllamaAdapter>[0] = {
@@ -117,7 +126,7 @@ export async function universalModels(provider?: string): Promise<string[]> {
         const adapter = createAdapter(provider);
         const models = await adapter.models();
         modelsByProvider[provider] = models.map(
-          (model) => `${provider}/${model}`,
+          (model) => `${provider}/${model}`
         );
       } catch (error) {
         console.error(`Error fetching models for ${provider}:`, error);

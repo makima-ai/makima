@@ -45,12 +45,12 @@ export class OpenAIAdapter implements ModelAdapter {
       },
       {
         signal,
-      },
+      }
     );
 
     return convertChatCompletionMessageParamToMessage(
       res.choices[0].message,
-      agent_name,
+      agent_name
     ) as OutputMessage;
   }
 
@@ -74,7 +74,7 @@ export class OpenAIAdapter implements ModelAdapter {
     onMessage?: (message: Message) => void;
   }): Promise<OutputMessage> {
     const omessages: ChatCompletionMessageParam[] = messages.map(
-      convertMessageToChatCompletionMessageParam,
+      convertMessageToChatCompletionMessageParam
     );
 
     const otools = tools?.map(convertToolToChatCompletionTool);
@@ -87,16 +87,16 @@ export class OpenAIAdapter implements ModelAdapter {
         response_format:
           format === "json"
             ? {
-              type: "json_object",
-            }
+                type: "json_object",
+              }
             : undefined,
       },
-      { signal },
+      { signal }
     );
 
     const inter_message = convertChatCompletionMessageParamToMessage(
       res.choices[0].message,
-      agent_name,
+      agent_name
     ) as OutputMessage;
 
     onMessage?.(inter_message);
@@ -175,7 +175,7 @@ export class OpenAIAdapter implements ModelAdapter {
 }
 
 export function convertToolToChatCompletionTool(
-  tool: Tool,
+  tool: Tool
 ): ChatCompletionTool {
   const params = tool.params as JSONSchema;
   return {
@@ -192,7 +192,7 @@ export function convertToolToChatCompletionTool(
 }
 
 export function convertMessageToChatCompletionMessageParam(
-  message: Message,
+  message: Message
 ): ChatCompletionMessageParam {
   switch (message.role) {
     case "system":
@@ -239,7 +239,7 @@ export function convertMessageToChatCompletionMessageParam(
 }
 
 function convertMessageContentToChatCompletionContentPart(
-  content: MessageContent,
+  content: MessageContent
 ): ChatCompletionContentPart[] | string | null {
   if (typeof content === "string") {
     return content;
@@ -271,7 +271,7 @@ function convertMessageContentToChatCompletionContentPart(
 
 export function convertChatCompletionMessageParamToMessage(
   param: ChatCompletionMessageParam,
-  model_name?: string,
+  model_name?: string
 ): Message {
   switch (param.role) {
     case "user":
@@ -282,6 +282,7 @@ export function convertChatCompletionMessageParamToMessage(
           typeof param.content === "string"
             ? param.content
             : JSON.stringify(param.content),
+        authorId: param.name || "user",
       };
     case "assistant":
       if (param.tool_calls && param.tool_calls.length > 0) {

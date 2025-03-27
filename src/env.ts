@@ -4,6 +4,8 @@ import { z } from "zod";
 const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_BASE_URL: z.string().url().optional(),
+  OPENROUTER_BASE_URL: z.string().url().default("https://api.openrouter.ai/v1"),
+  OPENROUTER_API_KEY: z.string().optional(),
   OLLAMA_HOST: z.string().url().default("http://127.0.0.1:11434"),
   PGVECTOR_URL: z.string().url().optional(),
   DATABASE_URL: z.string().url(),
